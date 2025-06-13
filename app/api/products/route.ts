@@ -5,38 +5,25 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const query = searchParams.get("q") || ""
-    const categories = searchParams.getAll("category")
+    const category = searchParams.get("category") || ""
     const minPrice = Number(searchParams.get("minPrice") || 0)
     const maxPrice = Number(searchParams.get("maxPrice") || 1000000)
-    const sortBy = searchParams.get("sortBy") || "name"
-    const sortOrder = searchParams.get("sortOrder") || "asc"
 
     // Construir la consulta SQL
     let sql = "SELECT * FROM products WHERE price >= ? AND price <= ?"
     const params: any[] = [minPrice, maxPrice]
 
-    // Filtro por búsqueda
     if (query) {
-      sql += " AND (name LIKE ? OR description LIKE ?)"
-      params.push(`%${query}%`, `%${query}%`)
+      sql += " AND name LIKE ?"
+      params.push(`%${query}%`)
     }
 
-    // Filtro por categorías
-    if (categories.length > 0) {
-      const categoryPlaceholders = categories.map(() => "?").join(",")
-      sql += ` AND category IN (${categoryPlaceholders})`
-      params.push(...categories)
+    if (category) {
+      sql += " AND category = ?"
+      params.push(category)
     }
 
-    // Ordenamiento
-    const validSortFields = ["name", "price", "category", "stock", "created_at"]
-    const validSortOrders = ["asc", "desc"]
-
-    if (validSortFields.includes(sortBy) && validSortOrders.includes(sortOrder)) {
-      sql += ` ORDER BY ${sortBy} ${sortOrder.toUpperCase()}`
-    } else {
-      sql += " ORDER BY name ASC"
-    }
+    sql += " ORDER BY name ASC"
 
     const products = await executeQuery(sql, params)
 
