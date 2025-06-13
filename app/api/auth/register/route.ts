@@ -1,37 +1,136 @@
 import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { executeQuery } from "@/lib/mysql"
+import { validateEmail, validatePassword, generateSecureToken } from "@/lib/validation"
 
+// Caso 1: Registrar nueva cuenta de usuario (mejorado)
 export async function POST(request: Request) {
   try {
-    const { name, email, password } = await request.json()
+    const { name, email, password, confirmPassword } = await request.json()
 
-    // Validar datos
-    if (!name || !email || !password) {
-      return NextResponse.json({ error: "Todos los campos son requeridos" }, { status: 400 })
+    // Validaciones básicas
+    if (!name || !email || !password || !confirmPassword) {
+      return NextResponse.json(
+        {
+          error: "Todos los campos son requeridos",
+          field: "general",
+        },
+        { status: 400 },
+      )
+    }
+
+    // Validar nombre
+    if (name.length < 2) {
+      return NextResponse.json(
+        {
+          error: "El nombre debe tener al menos 2 caracteres",
+          field: "name",
+        },
+        { status: 400 },
+      )
+    }
+
+    if (name.length > 100) {
+      return NextResponse.json(
+        {
+          error: "El nombre es demasiado largo",
+          field: "name",
+        },
+        { status: 400 },
+      )
+    }
+
+    // Caso 2: Validar Formato de Correo de Usuario
+    const emailValidation = validateEmail(email)
+    if (!emailValidation.isValid) {
+      return NextResponse.json(
+        {
+          error: emailValidation.message,
+          field: "email",
+        },
+        { status: 400 },
+      )
+    }
+
+    // Caso 3: Validar Fuerza de Contraseña de Usuario
+    const passwordValidation = validatePassword(password)
+    if (!passwordValidation.isValid) {
+      return NextResponse.json(
+        {
+          error: passwordValidation.message,
+          field: "password",
+          score: passwordValidation.score,
+        },
+        { status: 400 },
+      )
+    }
+
+    // Validar confirmación de contraseña
+    if (password !== confirmPassword) {
+      return NextResponse.json(
+        {
+          error: "Las contraseñas no coinciden",
+          field: "confirmPassword",
+        },
+        { status: 400 },
+      )
     }
 
     // Verificar si el usuario ya existe
-    const existingUserSql = "SELECT id FROM users WHERE email = ?"
+    const existingUserSql =
+      "SELECT id, email_verified, failed_login_attempts, account_locked_until FROM users WHERE email = ?"
     const existingUsers = await executeQuery(existingUserSql, [email])
 
     if (Array.isArray(existingUsers) && existingUsers.length > 0) {
-      return NextResponse.json({ error: "El correo electrónico ya está registrado" }, { status: 409 })
+      const existingUser = existingUsers[0] as any
+
+      if (existingUser.email_verified) {
+        return NextResponse.json(
+          {
+            error: "Ya existe una cuenta con este correo electrónico",
+            field: "email",
+          },
+          { status: 409 },
+        )
+      } else {
+        // Si existe pero no está verificado, permitir re-registro
+        await executeQuery("DELETE FROM users WHERE email = ? AND email_verified = FALSE", [email])
+      }
     }
 
     // Encriptar contraseña
-    const hashedPassword = await bcrypt.hash(password, 10)
+    const hashedPassword = await bcrypt.hash(password, 12)
 
-    // Crear usuario
-    const insertSql = "INSERT INTO users (name, email, password) VALUES (?, ?, ?)"
-    const result = await executeQuery(insertSql, [name, email, hashedPassword])
+    // Caso 4: Generar token de verificación para confirmar cuenta vía correo
+    const verificationToken = generateSecureToken()
+    const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 horas
+
+    // Crear usuario con estado no verificado
+    const insertSql = `
+      INSERT INTO users (name, email, password, email_verified, verification_token, verification_token_expires, failed_login_attempts, account_locked_until) 
+      VALUES (?, ?, ?, FALSE, ?, ?, 0, NULL)
+    `
+    const result = await executeQuery(insertSql, [name, email, hashedPassword, verificationToken, tokenExpiry])
+
+    // En un entorno real, aquí enviarías el correo de verificación
+    // Por ahora, devolvemos el token para testing
+    const userId = (result as any).insertId
 
     return NextResponse.json({
       success: true,
-      userId: (result as any).insertId,
+      userId,
+      message: "Cuenta creada exitosamente. Por favor, verifica tu correo electrónico.",
+      // En producción, NO devolver el token en la respuesta
+      verificationToken: process.env.NODE_ENV === "development" ? verificationToken : undefined,
     })
   } catch (error) {
     console.error("Error al registrar usuario:", error)
-    return NextResponse.json({ error: "Error al registrar usuario" }, { status: 500 })
+    return NextResponse.json(
+      {
+        error: "Error interno del servidor",
+        field: "general",
+      },
+      { status: 500 },
+    )
   }
 }
