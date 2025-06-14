@@ -3,17 +3,22 @@
 import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Image from "next/image"
+import Link from "next/link"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import { Button } from "@/components/ui/button"
-import { ShoppingCart } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
+import { ShoppingCart, Eye, ArrowLeft } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 
 interface Product {
-  _id: string
+  id: number
   name: string
   price: number
   image: string
+  category: string
+  description: string
+  stock: number
 }
 
 export default function SearchPage() {
@@ -27,34 +32,39 @@ export default function SearchPage() {
     const searchProducts = async () => {
       setLoading(true)
       try {
-        // En una implementación real, aquí se enviaría una solicitud a la API
-        // para buscar productos según el query
+        const response = await fetch(`/api/products?q=${encodeURIComponent(query)}`)
 
-        // Simulamos una respuesta con datos de ejemplo
-        await new Promise((resolve) => setTimeout(resolve, 1000))
+        if (!response.ok) {
+          throw new Error("Error al buscar productos")
+        }
 
-        // Datos de ejemplo filtrados por el query
-        const exampleProducts = [
-          { _id: "1", name: "Salmón Fresco", price: 8990, image: "/images/salmon.jpg" },
-          { _id: "2", name: "Merluza Austral", price: 5990, image: "/images/merluza.jpg" },
-          { _id: "3", name: "Reineta", price: 6490, image: "/images/reineta.jpg" },
-          { _id: "4", name: "Camarones", price: 12990, image: "/images/camarones.jpg" },
-        ]
+        const data = await response.json()
 
-        const filteredProducts = exampleProducts.filter((product) =>
-          product.name.toLowerCase().includes(query.toLowerCase()),
-        )
-
-        setProducts(filteredProducts)
+        if (Array.isArray(data)) {
+          setProducts(data)
+        } else {
+          setProducts([])
+        }
       } catch (error) {
         console.error("Error al buscar productos:", error)
+        setProducts([])
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los resultados de búsqueda",
+          variant: "destructive",
+        })
       } finally {
         setLoading(false)
       }
     }
 
-    searchProducts()
-  }, [query])
+    if (query) {
+      searchProducts()
+    } else {
+      setLoading(false)
+      setProducts([])
+    }
+  }, [query, toast])
 
   const addToCart = async (product: Product) => {
     try {
@@ -64,7 +74,7 @@ export default function SearchPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          productId: product._id,
+          productId: product.id,
           quantity: 1,
         }),
       })
@@ -80,7 +90,6 @@ export default function SearchPage() {
       toast({
         title: "Producto añadido",
         description: `${product.name} se ha añadido al carrito`,
-        variant: "default",
       })
     }
   }
@@ -88,39 +97,137 @@ export default function SearchPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen pt-24 pb-16">
+      <main className="min-h-screen pt-32 pb-16">
         <div className="container mx-auto px-4">
-          <h1 className="text-3xl font-bold mb-6">
-            Resultados de búsqueda: <span className="text-[#005f73]">"{query}"</span>
-          </h1>
+          {/* Breadcrumb y título */}
+          <div className="mb-8">
+            <Link href="/" className="inline-flex items-center text-[#005f73] hover:underline mb-4">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Volver al inicio
+            </Link>
+            <h1 className="text-3xl font-bold mb-2">
+              Resultados de búsqueda: <span className="text-[#005f73]">"{query}"</span>
+            </h1>
+            {!loading && (
+              <p className="text-gray-600">
+                {products.length > 0
+                  ? `Se encontraron ${products.length} producto${products.length !== 1 ? "s" : ""}`
+                  : "No se encontraron productos"}
+              </p>
+            )}
+          </div>
 
           {loading ? (
-            <div className="text-center py-12">Buscando productos...</div>
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#005f73]"></div>
+              <span className="ml-2">Buscando productos...</span>
+            </div>
           ) : products.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {products.map((product) => (
-                <div
-                  key={product._id}
-                  className="bg-white rounded-lg overflow-hidden shadow-md transition-transform hover:translate-y-[-5px]"
-                >
+                <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="relative h-48">
-                    <Image src={product.image || "/placeholder.svg"} alt={product.name} fill className="object-cover" />
+                    <Image
+                      src={product.image || "/placeholder.svg?height=200&width=300"}
+                      alt={product.name}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                    />
+                    {product.stock <= 10 && product.stock > 0 && (
+                      <div className="absolute top-2 right-2 bg-orange-500 text-white px-2 py-1 rounded text-xs">
+                        Stock bajo
+                      </div>
+                    )}
+                    {product.stock === 0 && (
+                      <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded text-xs">
+                        Sin stock
+                      </div>
+                    )}
                   </div>
-                  <div className="p-6">
-                    <h3 className="text-lg font-semibold text-[#005f73]">{product.name}</h3>
-                    <div className="text-[#2a9d8f] font-bold my-2">${product.price.toLocaleString()}/kg</div>
-                    <Button className="w-full bg-[#2a9d8f] hover:bg-[#21867a]" onClick={() => addToCart(product)}>
-                      <ShoppingCart className="mr-2 h-4 w-4" />
-                      Añadir al carrito
-                    </Button>
-                  </div>
-                </div>
+
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="text-lg font-semibold text-[#005f73] line-clamp-1">{product.name}</h3>
+                      <span className="text-xs bg-gray-100 px-2 py-1 rounded capitalize">{product.category}</span>
+                    </div>
+
+                    <div className="text-[#2a9d8f] font-bold text-xl mb-2">${product.price.toLocaleString()}/kg</div>
+
+                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">{product.description}</p>
+
+                    <div className="text-sm text-gray-500 mb-4">
+                      {product.stock > 0 ? `Stock: ${product.stock} kg` : "Sin stock"}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        className="flex-1 bg-[#2a9d8f] hover:bg-[#21867a] text-sm"
+                        onClick={() => addToCart(product)}
+                        disabled={product.stock === 0}
+                      >
+                        <ShoppingCart className="mr-1 h-4 w-4" />
+                        {product.stock === 0 ? "Sin stock" : "Añadir"}
+                      </Button>
+                      <Link href={`/productos/${product.id}`}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-[#2a9d8f] text-[#2a9d8f] hover:bg-[#2a9d8f] hover:text-white"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           ) : (
             <div className="text-center py-12">
-              <p className="text-lg mb-4">No se encontraron productos que coincidan con "{query}"</p>
-              <p>Intenta con otra búsqueda o explora nuestro catálogo completo</p>
+              <div className="max-w-md mx-auto">
+                <h2 className="text-xl font-semibold mb-4">No se encontraron productos</h2>
+                <p className="text-gray-600 mb-6">
+                  No encontramos productos que coincidan con "{query}". Intenta con otros términos de búsqueda.
+                </p>
+                <div className="space-y-3">
+                  <Link href="/productos">
+                    <Button className="w-full bg-[#005f73] hover:bg-[#003d4d]">Ver todos los productos</Button>
+                  </Link>
+                  <p className="text-sm text-gray-500">
+                    Sugerencias: Intenta con términos como "salmón", "mariscos", "pescados", etc.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Productos relacionados o sugerencias */}
+          {!loading && products.length === 0 && query && (
+            <div className="mt-12">
+              <h2 className="text-2xl font-bold text-[#005f73] mb-6">Productos populares</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* Mostrar algunos productos populares como sugerencia */}
+                <Card className="overflow-hidden">
+                  <div className="relative h-32">
+                    <Image
+                      src="/placeholder.svg?height=150&width=200"
+                      alt="Salmón Fresco"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <CardContent className="p-3">
+                    <h3 className="font-semibold text-sm">Salmón Fresco</h3>
+                    <p className="text-[#2a9d8f] font-bold">$8.990/kg</p>
+                    <Link href="/productos/1">
+                      <Button size="sm" className="w-full mt-2 bg-[#2a9d8f] hover:bg-[#21867a]">
+                        Ver producto
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           )}
         </div>

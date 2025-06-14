@@ -64,3 +64,27 @@
   background-position: center;
   height: 80vh;
 }
+
+/* Ajuste para el header más alto */
+.pt-24 {
+  padding-top: 7rem; /* Aumentado para acomodar el header de dos filas */
+}
+
+.pt-32 {
+  padding-top: 8rem; /* Para páginas que necesitan más espacio */
+}
+
+/* Utilidades adicionales */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}

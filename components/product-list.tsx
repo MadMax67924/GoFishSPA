@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ShoppingCart, Eye } from "lucide-react"
+import { ShoppingCart, Eye, RefreshCw } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 
 interface Product {
@@ -21,6 +21,7 @@ interface Product {
 export default function ProductList() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const searchParams = useSearchParams()
   const { toast } = useToast()
 
@@ -31,49 +32,46 @@ export default function ProductList() {
   const sortBy = searchParams.get("sortBy") || "name"
   const sortOrder = searchParams.get("sortOrder") || "asc"
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true)
-      try {
-        // Construir URL con todos los parámetros
-        const params = new URLSearchParams()
-        if (query) params.set("q", query)
-        categories.forEach((cat) => params.append("category", cat))
-        if (minPrice > 0) params.set("minPrice", minPrice.toString())
-        if (maxPrice < 20000) params.set("maxPrice", maxPrice.toString())
-        if (sortBy) params.set("sortBy", sortBy)
-        if (sortOrder) params.set("sortOrder", sortOrder)
+  const fetchProducts = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      // Construir URL con todos los parámetros
+      const params = new URLSearchParams()
+      if (query) params.set("q", query)
+      categories.forEach((cat) => params.append("category", cat))
+      if (minPrice > 0) params.set("minPrice", minPrice.toString())
+      if (maxPrice < 20000) params.set("maxPrice", maxPrice.toString())
+      if (sortBy) params.set("sortBy", sortBy)
+      if (sortOrder) params.set("sortOrder", sortOrder)
 
-        const response = await fetch(`/api/products?${params.toString()}`)
+      const response = await fetch(`/api/products?${params.toString()}`)
 
-        if (!response.ok) {
-          throw new Error("Error al cargar productos")
-        }
-
-        const data = await response.json()
-
-        // Asegurar que data es un array
-        if (Array.isArray(data)) {
-          setProducts(data)
-        } else {
-          console.error("Los datos recibidos no son un array:", data)
-          setProducts([])
-        }
-      } catch (error) {
-        console.error("Error:", error)
-        setProducts([])
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar los productos. Inténtalo de nuevo.",
-          variant: "destructive",
-        })
-      } finally {
-        setLoading(false)
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`)
       }
-    }
 
+      const data = await response.json()
+
+      if (Array.isArray(data)) {
+        setProducts(data)
+      } else {
+        console.error("Los datos recibidos no son un array:", data)
+        setProducts([])
+        setError("Formato de datos inválido")
+      }
+    } catch (error) {
+      console.error("Error al cargar productos:", error)
+      setError(error instanceof Error ? error.message : "Error desconocido")
+      setProducts([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
     fetchProducts()
-  }, [query, categories, minPrice, maxPrice, sortBy, sortOrder, toast])
+  }, [query, categories, minPrice, maxPrice, sortBy, sortOrder])
 
   const addToCart = async (product: Product) => {
     try {
@@ -115,11 +113,30 @@ export default function ProductList() {
     )
   }
 
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-600 mb-4">Error al cargar productos: {error}</p>
+        <Button onClick={fetchProducts} className="bg-[#005f73] hover:bg-[#003d4d]">
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Reintentar
+        </Button>
+      </div>
+    )
+  }
+
   if (!Array.isArray(products) || products.length === 0) {
     return (
       <div className="text-center py-12">
         <p className="text-lg mb-4">No se encontraron productos que coincidan con los criterios de búsqueda.</p>
-        <p className="text-gray-600">Intenta con otros filtros o términos de búsqueda.</p>
+        <p className="text-gray-600 mb-4">Intenta con otros filtros o términos de búsqueda.</p>
+        <Button onClick={fetchProducts} variant="outline" className="mr-2">
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Actualizar
+        </Button>
+        <Link href="/productos">
+          <Button className="bg-[#005f73] hover:bg-[#003d4d]">Ver todos los productos</Button>
+        </Link>
       </div>
     )
   }
@@ -132,9 +149,14 @@ export default function ProductList() {
           Mostrando {products.length} producto{products.length !== 1 ? "s" : ""}
           {categories.length > 0 && <span> en {categories.join(", ")}</span>}
         </p>
-        <p className="text-sm text-gray-500">
-          Ordenado por {sortBy} ({sortOrder === "asc" ? "ascendente" : "descendente"})
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-sm text-gray-500">
+            Ordenado por {sortBy} ({sortOrder === "asc" ? "ascendente" : "descendente"})
+          </p>
+          <Button onClick={fetchProducts} variant="ghost" size="sm">
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Grid de productos */}
@@ -152,8 +174,13 @@ export default function ProductList() {
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               />
-              {product.stock <= 10 && (
-                <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded text-xs">Stock bajo</div>
+              {product.stock <= 10 && product.stock > 0 && (
+                <div className="absolute top-2 right-2 bg-orange-500 text-white px-2 py-1 rounded text-xs">
+                  Stock bajo
+                </div>
+              )}
+              {product.stock === 0 && (
+                <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded text-xs">Sin stock</div>
               )}
             </div>
             <div className="p-6">

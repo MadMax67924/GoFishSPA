@@ -1,6 +1,5 @@
 import Header from "@/components/header"
 import Hero from "@/components/hero"
-import SearchBar from "@/components/search-bar"
 import ProductCatalog from "@/components/product-catalog"
 import Features from "@/components/features"
 import Testimonials from "@/components/testimonials"
@@ -12,7 +11,6 @@ export default function Home() {
     <main>
       <Header />
       <Hero />
-      <SearchBar />
       <ProductCatalog />
       <Features />
       <Testimonials />
