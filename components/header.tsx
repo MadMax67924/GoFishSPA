@@ -46,10 +46,10 @@ export default function Header() {
                 <Link href="/productos" className="text-lg hover:text-[#e9c46a] transition-colors">
                   Productos
                 </Link>
-                <Link href="#nosotros" className="text-lg hover:text-[#e9c46a] transition-colors">
+                <Link href="/nosotros" className="text-lg hover:text-[#e9c46a] transition-colors">
                   Nosotros
                 </Link>
-                <Link href="#contacto" className="text-lg hover:text-[#e9c46a] transition-colors">
+                <Link href="/contacto" className="text-lg hover:text-[#e9c46a] transition-colors">
                   Contacto
                 </Link>
                 <Button
@@ -71,10 +71,10 @@ export default function Header() {
             <Link href="/productos" className="hover:text-[#e9c46a] transition-colors">
               Productos
             </Link>
-            <Link href="#nosotros" className="hover:text-[#e9c46a] transition-colors">
+            <Link href="/nosotros" className="hover:text-[#e9c46a] transition-colors">
               Nosotros
             </Link>
-            <Link href="#contacto" className="hover:text-[#e9c46a] transition-colors">
+            <Link href="/contacto" className="hover:text-[#e9c46a] transition-colors">
               Contacto
             </Link>
             <Button

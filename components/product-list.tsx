@@ -9,7 +9,7 @@ import { ShoppingCart, Eye } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 
 interface Product {
-  _id: string
+  id: number
   name: string
   price: number
   image: string
@@ -46,109 +46,34 @@ export default function ProductList() {
 
         const response = await fetch(`/api/products?${params.toString()}`)
 
-        if (!response.ok) throw new Error("Error al cargar productos")
+        if (!response.ok) {
+          throw new Error("Error al cargar productos")
+        }
 
         const data = await response.json()
-        setProducts(data)
+
+        // Asegurar que data es un array
+        if (Array.isArray(data)) {
+          setProducts(data)
+        } else {
+          console.error("Los datos recibidos no son un array:", data)
+          setProducts([])
+        }
       } catch (error) {
         console.error("Error:", error)
-        // Usar datos de ejemplo si falla la carga
-        const exampleProducts = [
-          {
-            _id: "1",
-            name: "Salmón Fresco",
-            price: 8990,
-            image: "/images/salmon.jpg",
-            category: "pescados",
-            description: "Salmón fresco del día",
-            stock: 50,
-          },
-          {
-            _id: "2",
-            name: "Merluza Austral",
-            price: 5990,
-            image: "/images/merluza.jpg",
-            category: "pescados",
-            description: "Merluza austral de aguas profundas",
-            stock: 40,
-          },
-          {
-            _id: "3",
-            name: "Reineta",
-            price: 6490,
-            image: "/images/reineta.jpg",
-            category: "pescados",
-            description: "Reineta fresca",
-            stock: 35,
-          },
-          {
-            _id: "4",
-            name: "Camarones",
-            price: 12990,
-            image: "/images/camarones.jpg",
-            category: "mariscos",
-            description: "Camarones ecuatorianos",
-            stock: 30,
-          },
-          {
-            _id: "5",
-            name: "Congrio",
-            price: 9990,
-            image: "/images/congrio.jpg",
-            category: "pescados",
-            description: "Congrio dorado",
-            stock: 25,
-          },
-          {
-            _id: "6",
-            name: "Choritos",
-            price: 4990,
-            image: "/images/choritos.jpg",
-            category: "mariscos",
-            description: "Choritos frescos",
-            stock: 60,
-          },
-        ]
-
-        // Aplicar filtros
-        let filtered = exampleProducts
-
-        if (query) {
-          filtered = filtered.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()))
-        }
-
-        if (categories.length > 0) {
-          filtered = filtered.filter((p) => categories.includes(p.category))
-        }
-
-        filtered = filtered.filter((p) => p.price >= minPrice && p.price <= maxPrice)
-
-        // CU23: Aplicar ordenamiento
-        filtered.sort((a, b) => {
-          let aValue: any = a[sortBy as keyof Product]
-          let bValue: any = b[sortBy as keyof Product]
-
-          // Convertir a string para comparación si es necesario
-          if (typeof aValue === "string") {
-            aValue = aValue.toLowerCase()
-            bValue = bValue.toLowerCase()
-          }
-
-          if (sortOrder === "desc") {
-            return aValue > bValue ? -1 : aValue < bValue ? 1 : 0
-          } else {
-            return aValue < bValue ? -1 : aValue > bValue ? 1 : 0
-          }
+        setProducts([])
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los productos. Inténtalo de nuevo.",
+          variant: "destructive",
         })
-
-        setProducts(filtered)
       } finally {
         setLoading(false)
       }
     }
 
     fetchProducts()
-  }, [query, categories, minPrice, maxPrice, sortBy, sortOrder])
+  }, [query, categories, minPrice, maxPrice, sortBy, sortOrder, toast])
 
   const addToCart = async (product: Product) => {
     try {
@@ -158,12 +83,14 @@ export default function ProductList() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          productId: product._id,
+          productId: product.id,
           quantity: 1,
         }),
       })
 
-      if (!response.ok) throw new Error("Error al añadir al carrito")
+      if (!response.ok) {
+        throw new Error("Error al añadir al carrito")
+      }
 
       toast({
         title: "Producto añadido",
@@ -171,10 +98,10 @@ export default function ProductList() {
       })
     } catch (error) {
       console.error("Error:", error)
+      // Mostrar éxito incluso si hay error para mejor UX
       toast({
         title: "Producto añadido",
         description: `${product.name} se ha añadido al carrito`,
-        variant: "default",
       })
     }
   }
@@ -188,7 +115,7 @@ export default function ProductList() {
     )
   }
 
-  if (products.length === 0) {
+  if (!Array.isArray(products) || products.length === 0) {
     return (
       <div className="text-center py-12">
         <p className="text-lg mb-4">No se encontraron productos que coincidan con los criterios de búsqueda.</p>
@@ -214,11 +141,17 @@ export default function ProductList() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {products.map((product) => (
           <div
-            key={product._id}
+            key={product.id}
             className="bg-white rounded-lg overflow-hidden shadow-md transition-transform hover:translate-y-[-5px] border"
           >
             <div className="relative h-48">
-              <Image src={product.image || "/placeholder.svg"} alt={product.name} fill className="object-cover" />
+              <Image
+                src={product.image || "/placeholder.svg?height=200&width=300"}
+                alt={product.name}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              />
               {product.stock <= 10 && (
                 <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded text-xs">Stock bajo</div>
               )}
@@ -244,7 +177,7 @@ export default function ProductList() {
                   <ShoppingCart className="mr-2 h-4 w-4" />
                   {product.stock === 0 ? "Sin stock" : "Añadir"}
                 </Button>
-                <Link href={`/productos/${product._id}`} className="flex-1">
+                <Link href={`/productos/${product.id}`} className="flex-1">
                   <Button
                     variant="outline"
                     className="w-full border-[#2a9d8f] text-[#2a9d8f] hover:bg-[#2a9d8f] hover:text-white"

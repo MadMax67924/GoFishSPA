@@ -2,15 +2,20 @@
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ShoppingCart } from "lucide-react"
+import { ShoppingCart, Eye } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 
 interface Product {
-  _id: string
+  id: number
   name: string
   price: number
   image: string
+  category: string
+  description: string
+  stock: number
+  featured: boolean
 }
 
 export default function ProductCatalog() {
@@ -22,18 +27,23 @@ export default function ProductCatalog() {
     const fetchProducts = async () => {
       try {
         const response = await fetch("/api/products")
-        if (!response.ok) throw new Error("Error al cargar productos")
+
+        if (!response.ok) {
+          throw new Error("Error al cargar productos")
+        }
+
         const data = await response.json()
-        setProducts(data)
+
+        // Filtrar solo productos destacados y limitar a 4
+        if (Array.isArray(data)) {
+          const featuredProducts = data.filter((product: Product) => product.featured).slice(0, 4)
+          setProducts(featuredProducts)
+        } else {
+          setProducts([])
+        }
       } catch (error) {
         console.error("Error:", error)
-        // Usar datos de ejemplo si falla la carga
-        setProducts([
-          { _id: "1", name: "Salmón Fresco", price: 8990, image: "/images/salmon.jpg" },
-          { _id: "2", name: "Merluza Austral", price: 5990, image: "/images/merluza.jpg" },
-          { _id: "3", name: "Reineta", price: 6490, image: "/images/reineta.jpg" },
-          { _id: "4", name: "Camarones", price: 12990, image: "/images/camarones.jpg" },
-        ])
+        setProducts([])
       } finally {
         setLoading(false)
       }
@@ -50,12 +60,14 @@ export default function ProductCatalog() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          productId: product._id,
+          productId: product.id,
           quantity: 1,
         }),
       })
 
-      if (!response.ok) throw new Error("Error al añadir al carrito")
+      if (!response.ok) {
+        throw new Error("Error al añadir al carrito")
+      }
 
       toast({
         title: "Producto añadido",
@@ -66,7 +78,6 @@ export default function ProductCatalog() {
       toast({
         title: "Producto añadido",
         description: `${product.name} se ha añadido al carrito`,
-        variant: "default",
       })
     }
   }
@@ -74,30 +85,68 @@ export default function ProductCatalog() {
   return (
     <section className="bg-gray-50 py-16" id="productos">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-center text-[#005f73] mb-12">Nuestros Productos</h2>
+        <h2 className="text-3xl font-bold text-center text-[#005f73] mb-12">Nuestros Productos Destacados</h2>
 
         {loading ? (
-          <div className="text-center">Cargando productos...</div>
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#005f73]"></div>
+            <span className="ml-2">Cargando productos...</span>
+          </div>
+        ) : products.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {products.map((product) => (
+                <div
+                  key={product.id}
+                  className="bg-white rounded-lg overflow-hidden shadow-md transition-transform hover:translate-y-[-5px]"
+                >
+                  <div className="relative h-48">
+                    <Image
+                      src={product.image || "/placeholder.svg?height=200&width=300"}
+                      alt={product.name}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                    />
+                  </div>
+                  <div className="p-6">
+                    <h3 className="text-lg font-semibold text-[#005f73] mb-2">{product.name}</h3>
+                    <div className="text-[#2a9d8f] font-bold mb-3">${product.price.toLocaleString()}/kg</div>
+                    <div className="flex gap-2">
+                      <Button
+                        className="flex-1 bg-[#2a9d8f] hover:bg-[#21867a] text-sm"
+                        onClick={() => addToCart(product)}
+                      >
+                        <ShoppingCart className="mr-1 h-4 w-4" />
+                        Añadir
+                      </Button>
+                      <Link href={`/productos/${product.id}`}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-[#2a9d8f] text-[#2a9d8f] hover:bg-[#2a9d8f] hover:text-white"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="text-center mt-8">
+              <Link href="/productos">
+                <Button className="bg-[#005f73] hover:bg-[#003d4d] px-8 py-3">Ver todos los productos</Button>
+              </Link>
+            </div>
+          </>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {products.map((product) => (
-              <div
-                key={product._id}
-                className="bg-white rounded-lg overflow-hidden shadow-md transition-transform hover:translate-y-[-5px]"
-              >
-                <div className="relative h-48">
-                  <Image src={product.image || "/placeholder.svg"} alt={product.name} fill className="object-cover" />
-                </div>
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold text-[#005f73]">{product.name}</h3>
-                  <div className="text-[#2a9d8f] font-bold my-2">${product.price.toLocaleString()}/kg</div>
-                  <Button className="w-full bg-[#2a9d8f] hover:bg-[#21867a]" onClick={() => addToCart(product)}>
-                    <ShoppingCart className="mr-2 h-4 w-4" />
-                    Añadir al carrito
-                  </Button>
-                </div>
-              </div>
-            ))}
+          <div className="text-center py-12">
+            <p className="text-gray-600 mb-4">No hay productos disponibles en este momento.</p>
+            <Link href="/productos">
+              <Button className="bg-[#005f73] hover:bg-[#003d4d]">Ver catálogo completo</Button>
+            </Link>
           </div>
         )}
       </div>
