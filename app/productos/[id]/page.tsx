@@ -14,19 +14,53 @@ interface ProductPageProps {
 
 async function getProduct(id: string) {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-    const response = await fetch(`${baseUrl}/api/products/${id}`, {
-      cache: "no-store", // Asegurar datos frescos
-    })
+    // En una implementación real, esto sería una llamada a la API
+    // Aquí simulamos datos de ejemplo
+    const products = [
+      {
+        _id: "1",
+        name: "Salmón Fresco",
+        price: 8990,
+        image: "/images/salmon.jpg",
+        category: "pescados",
+        description: "Salmón fresco del día, ideal para preparaciones crudas como sushi o ceviches.",
+        stock: 50,
+      },
+      {
+        _id: "2",
+        name: "Merluza Austral",
+        price: 5990,
+        image: "/images/merluza.jpg",
+        category: "pescados",
+        description: "Merluza austral de aguas profundas, perfecta para frituras y guisos.",
+        stock: 40,
+      },
+      {
+        _id: "3",
+        name: "Reineta",
+        price: 6490,
+        image: "/images/reineta.jpg",
+        category: "pescados",
+        description: "Reineta fresca, pescado blanco de sabor suave ideal para hornear.",
+        stock: 35,
+      },
+      {
+        _id: "4",
+        name: "Camarones",
+        price: 12990,
+        image: "/images/camarones.jpg",
+        category: "mariscos",
+        description: "Camarones ecuatorianos de cultivo, perfectos para cócteles y paellas.",
+        stock: 30,
+      },
+    ]
 
-    if (!response.ok) {
-      if (response.status === 404) {
-        return null
-      }
-      throw new Error(`Error ${response.status}: ${response.statusText}`)
+    const product = products.find((p) => p._id === id)
+
+    if (!product) {
+      return null
     }
 
-    const product = await response.json()
     return product
   } catch (error) {
     console.error("Error al obtener producto:", error)
@@ -66,7 +100,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
               <div className="relative h-80 md:h-96">
                 <Image
-                  src={product.image || "/placeholder.svg?height=400&width=400"}
+                  src={product.image || "/placeholder.svg"}
                   alt={product.name}
                   fill
                   className="object-cover rounded-lg"
@@ -85,17 +119,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
                 <div className="mb-6">
                   <div className="flex items-center mb-2">
-                    {product.stock > 0 ? (
-                      <>
-                        <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-                        <span className="text-green-700">En stock: {product.stock} kg disponibles</span>
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-                        <span className="text-red-700">Sin stock</span>
-                      </>
-                    )}
+                    <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                    <span className="text-green-700">En stock: {product.stock} kg disponibles</span>
                   </div>
                   <div className="text-sm text-gray-500">
                     Categoría: <span className="font-medium capitalize">{product.category}</span>
@@ -112,7 +137,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <div className="mt-12">
             <h2 className="text-2xl font-bold mb-6">Productos relacionados</h2>
             <Suspense fallback={<div className="text-center py-8">Cargando productos relacionados...</div>}>
-              <RelatedProducts currentProductId={product.id.toString()} category={product.category} />
+              <RelatedProducts currentProductId={product._id} category={product.category} />
             </Suspense>
           </div>
         </div>
