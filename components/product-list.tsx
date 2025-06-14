@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
@@ -25,25 +25,30 @@ export default function ProductList() {
   const searchParams = useSearchParams()
   const { toast } = useToast()
 
+  // Memoizar los parámetros para evitar recargas innecesarias
   const query = searchParams.get("q") || ""
-  const categories = searchParams.getAll("category")
-  const minPrice = Number(searchParams.get("minPrice") || 0)
-  const maxPrice = Number(searchParams.get("maxPrice") || 20000)
+  const categories = searchParams.getAll("category").join(",")
+  const minPrice = searchParams.get("minPrice") || "0"
+  const maxPrice = searchParams.get("maxPrice") || "20000"
   const sortBy = searchParams.get("sortBy") || "name"
   const sortOrder = searchParams.get("sortOrder") || "asc"
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
       // Construir URL con todos los parámetros
       const params = new URLSearchParams()
       if (query) params.set("q", query)
-      categories.forEach((cat) => params.append("category", cat))
-      if (minPrice > 0) params.set("minPrice", minPrice.toString())
-      if (maxPrice < 20000) params.set("maxPrice", maxPrice.toString())
-      if (sortBy) params.set("sortBy", sortBy)
-      if (sortOrder) params.set("sortOrder", sortOrder)
+      if (categories) {
+        categories.split(",").forEach((cat) => {
+          if (cat.trim()) params.append("category", cat.trim())
+        })
+      }
+      if (minPrice !== "0") params.set("minPrice", minPrice)
+      if (maxPrice !== "20000") params.set("maxPrice", maxPrice)
+      if (sortBy !== "name") params.set("sortBy", sortBy)
+      if (sortOrder !== "asc") params.set("sortOrder", sortOrder)
 
       const response = await fetch(`/api/products?${params.toString()}`)
 
@@ -67,11 +72,11 @@ export default function ProductList() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [query, categories, minPrice, maxPrice, sortBy, sortOrder])
 
   useEffect(() => {
     fetchProducts()
-  }, [query, categories, minPrice, maxPrice, sortBy, sortOrder])
+  }, [fetchProducts])
 
   const addToCart = async (product: Product) => {
     try {
@@ -96,7 +101,6 @@ export default function ProductList() {
       })
     } catch (error) {
       console.error("Error:", error)
-      // Mostrar éxito incluso si hay error para mejor UX
       toast({
         title: "Producto añadido",
         description: `${product.name} se ha añadido al carrito`,
@@ -147,7 +151,7 @@ export default function ProductList() {
       <div className="mb-6 flex justify-between items-center">
         <p className="text-gray-600">
           Mostrando {products.length} producto{products.length !== 1 ? "s" : ""}
-          {categories.length > 0 && <span> en {categories.join(", ")}</span>}
+          {categories && <span> en {categories.replace(",", ", ")}</span>}
         </p>
         <div className="flex items-center gap-2">
           <p className="text-sm text-gray-500">
