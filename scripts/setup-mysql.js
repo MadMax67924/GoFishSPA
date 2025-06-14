@@ -1,269 +1,245 @@
-// Script para configurar MySQL para GoFish SpA
-
-import mysql from "mysql2/promise"
-
-const config = {
-  host: process.env.DB_HOST || "localhost",
-  port: Number(process.env.DB_PORT) || 3306,
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME || "gofish",
-}
+const mysql = require("mysql2/promise")
 
 async function setupDatabase() {
   let connection
 
   try {
     console.log("🔄 Conectando a MySQL...")
-    connection = await mysql.createConnection(config)
-    console.log("✅ Conectado a MySQL")
+
+    connection = await mysql.createConnection({
+      host: process.env.DB_HOST || "localhost",
+      port: process.env.DB_PORT || 3306,
+      user: process.env.DB_USER || "root",
+      password: process.env.DB_PASSWORD || "",
+      database: process.env.DB_NAME || "gofish_db",
+    })
+
+    console.log("✅ Conexión exitosa a MySQL")
 
     // Verificar si las tablas ya existen
-    console.log("🔄 Verificando estructura de base de datos...")
-    const [tables] = await connection.execute("SHOW TABLES")
+    const [tables] = await connection.execute(
+      "SELECT TABLE_NAME FROM information_schema.tables WHERE table_schema = ? AND TABLE_NAME IN ('products', 'users', 'orders', 'order_items')",
+      [process.env.DB_NAME || "gofish_db"],
+    )
 
-    if (tables.length === 0) {
-      console.log("📋 Creando estructura de base de datos...")
+    const existingTables = tables.map((row) => row.TABLE_NAME)
+    console.log("📋 Tablas existentes:", existingTables)
 
-      // Crear tabla de usuarios
-      await connection.execute(`
-        CREATE TABLE users (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          name VARCHAR(255) NOT NULL,
-          email VARCHAR(255) UNIQUE NOT NULL,
-          password VARCHAR(255) NOT NULL,
-          role ENUM('user', 'admin') DEFAULT 'user',
-          email_verified BOOLEAN DEFAULT FALSE,
-          verification_token VARCHAR(64) NULL,
-          verification_token_expires DATETIME NULL,
-          password_reset_token VARCHAR(64) NULL,
-          password_reset_expires DATETIME NULL,
-          failed_login_attempts INT DEFAULT 0,
-          account_locked_until DATETIME NULL,
-          last_login_attempt DATETIME NULL,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          INDEX idx_email (email),
-          INDEX idx_verification_token (verification_token),
-          INDEX idx_password_reset_token (password_reset_token)
-        )
-      `)
-      console.log("✅ Tabla users creada")
-
-      // Crear tabla de productos
+    // Crear tabla de productos si no existe
+    if (!existingTables.includes("products")) {
+      console.log("🔄 Creando tabla products...")
       await connection.execute(`
         CREATE TABLE products (
           id INT AUTO_INCREMENT PRIMARY KEY,
           name VARCHAR(255) NOT NULL,
           description TEXT,
-          price DECIMAL(10, 2) NOT NULL,
+          price DECIMAL(10,2) NOT NULL,
           image VARCHAR(500),
-          category ENUM('pescados', 'mariscos') NOT NULL,
+          category VARCHAR(100) NOT NULL,
           stock INT DEFAULT 0,
           featured BOOLEAN DEFAULT FALSE,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          INDEX idx_category (category),
-          INDEX idx_featured (featured),
-          INDEX idx_price (price)
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         )
       `)
       console.log("✅ Tabla products creada")
+    }
 
-      // Crear tabla de carritos
+    // Crear tabla de usuarios si no existe
+    if (!existingTables.includes("users")) {
+      console.log("🔄 Creando tabla users...")
       await connection.execute(`
-        CREATE TABLE carts (
+        CREATE TABLE users (
           id INT AUTO_INCREMENT PRIMARY KEY,
-          cart_id VARCHAR(255) UNIQUE NOT NULL,
-          user_id INT NULL,
+          email VARCHAR(255) UNIQUE NOT NULL,
+          password VARCHAR(255) NOT NULL,
+          name VARCHAR(255) NOT NULL,
+          role ENUM('admin', 'customer') DEFAULT 'customer',
+          email_verified BOOLEAN DEFAULT FALSE,
+          verification_token VARCHAR(255),
+          reset_token VARCHAR(255),
+          reset_token_expires DATETIME,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         )
       `)
-      console.log("✅ Tabla carts creada")
+      console.log("✅ Tabla users creada")
+    }
 
-      // Crear tabla de items del carrito
-      await connection.execute(`
-        CREATE TABLE cart_items (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          cart_id INT NOT NULL,
-          product_id INT NOT NULL,
-          quantity INT NOT NULL DEFAULT 1,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          FOREIGN KEY (cart_id) REFERENCES carts(id) ON DELETE CASCADE,
-          FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-          UNIQUE KEY unique_cart_product (cart_id, product_id)
-        )
-      `)
-      console.log("✅ Tabla cart_items creada")
-
-      // Crear tabla de pedidos
+    // Crear tabla de órdenes si no existe
+    if (!existingTables.includes("orders")) {
+      console.log("🔄 Creando tabla orders...")
       await connection.execute(`
         CREATE TABLE orders (
           id INT AUTO_INCREMENT PRIMARY KEY,
-          order_number VARCHAR(50) UNIQUE NOT NULL,
-          user_id INT NULL,
-          first_name VARCHAR(255) NOT NULL,
-          last_name VARCHAR(255) NOT NULL,
-          email VARCHAR(255) NOT NULL,
-          phone VARCHAR(50) NOT NULL,
-          address TEXT NOT NULL,
-          city VARCHAR(255) NOT NULL,
-          region VARCHAR(255) NOT NULL,
-          postal_code VARCHAR(20) NOT NULL,
-          payment_method ENUM('transferencia', 'webpay', 'efectivo') NOT NULL,
-          notes TEXT,
-          subtotal DECIMAL(10, 2) NOT NULL,
-          shipping DECIMAL(10, 2) NOT NULL DEFAULT 0,
-          total DECIMAL(10, 2) NOT NULL,
-          status ENUM('pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled') DEFAULT 'pending',
+          user_id INT,
+          total DECIMAL(10,2) NOT NULL,
+          status ENUM('pending', 'processing', 'shipped', 'delivered', 'cancelled') DEFAULT 'pending',
+          shipping_address TEXT,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
-          INDEX idx_status (status),
-          INDEX idx_created_at (created_at)
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
         )
       `)
       console.log("✅ Tabla orders creada")
+    }
 
-      // Crear tabla de items del pedido
+    // Crear tabla de items de órdenes si no existe
+    if (!existingTables.includes("order_items")) {
+      console.log("🔄 Creando tabla order_items...")
       await connection.execute(`
         CREATE TABLE order_items (
           id INT AUTO_INCREMENT PRIMARY KEY,
           order_id INT NOT NULL,
           product_id INT NOT NULL,
-          product_name VARCHAR(255) NOT NULL,
-          product_price DECIMAL(10, 2) NOT NULL,
           quantity INT NOT NULL,
-          subtotal DECIMAL(10, 2) NOT NULL,
+          price DECIMAL(10,2) NOT NULL,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-          FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT
+          FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
         )
       `)
       console.log("✅ Tabla order_items creada")
+    }
 
-      // Crear tabla de contactos
-      await connection.execute(`
-        CREATE TABLE contacts (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          name VARCHAR(255) NOT NULL,
-          email VARCHAR(255) NOT NULL,
-          message TEXT NOT NULL,
-          status ENUM('new', 'read', 'replied') DEFAULT 'new',
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        )
-      `)
-      console.log("✅ Tabla contacts creada")
+    // Verificar si ya hay productos
+    const [productCount] = await connection.execute("SELECT COUNT(*) as count FROM products")
 
-      console.log("📦 Insertando datos de ejemplo...")
+    if (productCount[0].count === 0) {
+      console.log("🔄 Insertando productos de ejemplo...")
 
-      // Insertar productos de ejemplo
       const products = [
-        [
-          "Salmón Fresco",
-          "Salmón fresco del día, ideal para preparaciones crudas como sushi o ceviches.",
-          8990.0,
-          "/placeholder.svg?height=200&width=300",
-          "pescados",
-          50,
-          true,
-        ],
-        [
-          "Merluza Austral",
-          "Merluza austral de aguas profundas, perfecta para frituras y guisos.",
-          5990.0,
-          "/placeholder.svg?height=200&width=300",
-          "pescados",
-          40,
-          true,
-        ],
-        [
-          "Reineta",
-          "Reineta fresca, pescado blanco de sabor suave ideal para hornear.",
-          6490.0,
-          "/placeholder.svg?height=200&width=300",
-          "pescados",
-          35,
-          true,
-        ],
-        [
-          "Camarones",
-          "Camarones ecuatorianos de cultivo, perfectos para cócteles y paellas.",
-          12990.0,
-          "/placeholder.svg?height=200&width=300",
-          "mariscos",
-          30,
-          true,
-        ],
-        [
-          "Congrio",
-          "Congrio dorado, ideal para caldillo y frituras.",
-          9990.0,
-          "/placeholder.svg?height=200&width=300",
-          "pescados",
-          25,
-          false,
-        ],
-        [
-          "Choritos",
-          "Choritos frescos de la zona, perfectos para preparar a la marinera.",
-          4990.0,
-          "/placeholder.svg?height=200&width=300",
-          "mariscos",
-          60,
-          false,
-        ],
-        [
-          "Pulpo",
-          "Pulpo fresco, ideal para ensaladas y preparaciones a la parrilla.",
-          15990.0,
-          "/placeholder.svg?height=200&width=300",
-          "mariscos",
-          15,
-          false,
-        ],
-        [
-          "Atún",
-          "Atún fresco, perfecto para tataki y preparaciones a la plancha.",
-          11990.0,
-          "/placeholder.svg?height=200&width=300",
-          "pescados",
-          20,
-          false,
-        ],
+        {
+          name: "Salmón Fresco",
+          description:
+            "Salmón fresco del día, ideal para preparaciones crudas como sushi o ceviches. Producto de primera calidad.",
+          price: 8990,
+          image: "/placeholder.svg?height=300&width=400",
+          category: "pescados",
+          stock: 50,
+          featured: true,
+        },
+        {
+          name: "Atún Rojo",
+          description:
+            "Atún rojo de primera calidad, perfecto para sashimi y preparaciones gourmet. Capturado de forma sostenible.",
+          price: 12990,
+          image: "/placeholder.svg?height=300&width=400",
+          category: "pescados",
+          stock: 25,
+          featured: true,
+        },
+        {
+          name: "Merluza Austral",
+          description:
+            "Merluza austral de aguas profundas, perfecta para frituras y guisos. Pescado blanco de sabor suave.",
+          price: 5990,
+          image: "/placeholder.svg?height=300&width=400",
+          category: "pescados",
+          stock: 40,
+          featured: false,
+        },
+        {
+          name: "Camarones Ecuatorianos",
+          description: "Camarones ecuatorianos de cultivo, perfectos para cócteles y paellas. Tamaño jumbo.",
+          price: 15990,
+          image: "/placeholder.svg?height=300&width=400",
+          category: "mariscos",
+          stock: 30,
+          featured: true,
+        },
+        {
+          name: "Pulpo Español",
+          description: "Pulpo español cocido, listo para ensaladas y tapas. Textura tierna y sabor intenso.",
+          price: 18990,
+          image: "/placeholder.svg?height=300&width=400",
+          category: "mariscos",
+          stock: 15,
+          featured: false,
+        },
+        {
+          name: "Reineta",
+          description: "Reineta fresca, pescado blanco de sabor suave ideal para hornear. Producto nacional.",
+          price: 6490,
+          image: "/placeholder.svg?height=300&width=400",
+          category: "pescados",
+          stock: 35,
+          featured: false,
+        },
+        {
+          name: "Langostinos",
+          description: "Langostinos frescos de gran tamaño, perfectos para parrilla y preparaciones especiales.",
+          price: 22990,
+          image: "/placeholder.svg?height=300&width=400",
+          category: "mariscos",
+          stock: 20,
+          featured: true,
+        },
+        {
+          name: "Corvina",
+          description: "Corvina fresca, pescado de carne firme y sabor delicado. Ideal para ceviches y frituras.",
+          price: 7990,
+          image: "/placeholder.svg?height=300&width=400",
+          category: "pescados",
+          stock: 45,
+          featured: false,
+        },
       ]
 
       for (const product of products) {
         await connection.execute(
           "INSERT INTO products (name, description, price, image, category, stock, featured) VALUES (?, ?, ?, ?, ?, ?, ?)",
-          product,
+          [
+            product.name,
+            product.description,
+            product.price,
+            product.image,
+            product.category,
+            product.stock,
+            product.featured,
+          ],
         )
       }
-      console.log("✅ Productos de ejemplo insertados")
 
-      // Insertar usuario administrador
-      const hashedPassword = "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi" // admin123
-      await connection.execute(
-        "INSERT INTO users (name, email, password, role, email_verified) VALUES (?, ?, ?, ?, ?)",
-        ["Administrador GoFish", "admin@gofish.cl", hashedPassword, "admin", true],
-      )
-      console.log("✅ Usuario administrador creado")
-      console.log("📧 Email: admin@gofish.cl")
-      console.log("🔑 Contraseña: admin123")
+      console.log("✅ Productos insertados correctamente")
     } else {
-      console.log("ℹ️ La base de datos ya está configurada")
+      console.log("ℹ️ Ya existen productos en la base de datos")
     }
 
-    // Verificar conexión
-    await connection.execute("SELECT 1")
-    console.log("🎉 ¡Base de datos MySQL configurada correctamente!")
+    // Verificar si ya hay usuarios admin
+    const [adminCount] = await connection.execute('SELECT COUNT(*) as count FROM users WHERE role = "admin"')
+
+    if (adminCount[0].count === 0) {
+      console.log("🔄 Creando usuario administrador...")
+
+      // Hash simple para desarrollo (en producción usar bcrypt)
+      const bcrypt = require("bcryptjs")
+      const hashedPassword = await bcrypt.hash("admin123", 10)
+
+      await connection.execute(
+        "INSERT INTO users (email, password, name, role, email_verified) VALUES (?, ?, ?, ?, ?)",
+        ["admin@gofish.com", hashedPassword, "Administrador", "admin", true],
+      )
+
+      console.log("✅ Usuario administrador creado")
+      console.log("📧 Email: admin@gofish.com")
+      console.log("🔑 Password: admin123")
+    } else {
+      console.log("ℹ️ Ya existe un usuario administrador")
+    }
+
+    console.log("\n🎉 ¡Base de datos configurada correctamente!")
+    console.log("📊 Resumen:")
+
+    const [finalProductCount] = await connection.execute("SELECT COUNT(*) as count FROM products")
+    const [finalUserCount] = await connection.execute("SELECT COUNT(*) as count FROM users")
+
+    console.log(`   - Productos: ${finalProductCount[0].count}`)
+    console.log(`   - Usuarios: ${finalUserCount[0].count}`)
+    console.log("   - Tablas: products, users, orders, order_items")
   } catch (error) {
-    console.error("❌ Error al configurar la base de datos:", error.message)
-    throw error
+    console.error("❌ Error al configurar la base de datos:", error)
+    process.exit(1)
   } finally {
     if (connection) {
       await connection.end()
@@ -272,5 +248,4 @@ async function setupDatabase() {
   }
 }
 
-// Ejecutar la configuración
 setupDatabase()
