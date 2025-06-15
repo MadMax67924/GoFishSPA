@@ -23,22 +23,33 @@ export default function CartSummary() {
   const [loading, setLoading] = useState(true)
 
   const fetchCartSummary = async () => {
+    setLoading(true)
     try {
       const response = await fetch("/api/cart", {
         cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache",
+        },
       })
 
       if (!response.ok) throw new Error("Error al cargar el resumen del carrito")
 
       const data = await response.json()
 
-      // Calcular el resumen
+      // Calcular el resumen con validación
       const items = data.items || []
-      const itemCount = items.reduce((acc: number, item: any) => acc + item.quantity, 0)
-      const subtotal = items.reduce((acc: number, item: any) => acc + item.price * item.quantity, 0)
+      const itemCount = items.reduce((acc: number, item: any) => {
+        return acc + (item.quantity || 0)
+      }, 0)
 
-      // Envío gratis por encima de cierto monto
-      const shipping = subtotal > 30000 ? 0 : subtotal > 0 ? 5000 : 0
+      const subtotal = items.reduce((acc: number, item: any) => {
+        const price = item.price || 0
+        const quantity = item.quantity || 0
+        return acc + price * quantity
+      }, 0)
+
+      // Envío gratis por encima de $30.000, pero solo si hay productos
+      const shipping = itemCount > 0 ? (subtotal >= 30000 ? 0 : 5000) : 0
 
       setSummary({
         subtotal,
@@ -60,17 +71,24 @@ export default function CartSummary() {
   }
 
   useEffect(() => {
+    // Ejecutar inmediatamente
     fetchCartSummary()
 
     // Escuchar eventos de actualización del carrito
     const handleCartUpdate = () => {
-      fetchCartSummary()
+      setTimeout(() => {
+        fetchCartSummary()
+      }, 100) // Pequeño delay para asegurar que la API se haya actualizado
     }
 
     window.addEventListener("cartUpdated", handleCartUpdate)
 
+    // También escuchar cuando se añaden productos
+    window.addEventListener("productAdded", handleCartUpdate)
+
     return () => {
       window.removeEventListener("cartUpdated", handleCartUpdate)
+      window.removeEventListener("productAdded", handleCartUpdate)
     }
   }, [])
 
@@ -99,7 +117,7 @@ export default function CartSummary() {
           <span className="text-gray-600">Envío</span>
           <span>{summary.shipping === 0 ? "Gratis" : `$${summary.shipping.toLocaleString()}`}</span>
         </div>
-        {summary.subtotal > 0 && summary.subtotal <= 30000 && (
+        {summary.itemCount > 0 && summary.subtotal < 30000 && (
           <div className="text-sm text-blue-600">
             Añade ${(30000 - summary.subtotal).toLocaleString()} más para envío gratis
           </div>

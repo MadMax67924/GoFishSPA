@@ -48,13 +48,17 @@ export default function CartItems() {
 
     // Escuchar eventos de actualización del carrito
     const handleCartUpdate = () => {
-      fetchCart()
+      setTimeout(() => {
+        fetchCart()
+      }, 100)
     }
 
     window.addEventListener("cartUpdated", handleCartUpdate)
+    window.addEventListener("productAdded", handleCartUpdate)
 
     return () => {
       window.removeEventListener("cartUpdated", handleCartUpdate)
+      window.removeEventListener("productAdded", handleCartUpdate)
     }
   }, [])
 
@@ -81,13 +85,15 @@ export default function CartItems() {
       // Actualizar el estado local inmediatamente
       setCartItems(cartItems.map((item) => (item.id === itemId ? { ...item, quantity: newQuantity } : item)))
 
-      // Disparar evento para actualizar otros componentes
-      window.dispatchEvent(new CustomEvent("cartUpdated"))
-
       toast({
         title: "Cantidad actualizada",
         description: "La cantidad del producto ha sido actualizada",
       })
+
+      // Disparar evento para actualizar otros componentes
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("cartUpdated"))
+      }, 50)
     } catch (error) {
       console.error("Error al actualizar cantidad:", error)
       toast({
@@ -125,13 +131,15 @@ export default function CartItems() {
       // Actualizar el estado local inmediatamente
       setCartItems(cartItems.filter((item) => item.id !== itemId))
 
-      // Disparar evento para actualizar otros componentes
-      window.dispatchEvent(new CustomEvent("cartUpdated"))
-
       toast({
         title: "Producto eliminado",
         description: "El producto ha sido eliminado del carrito",
       })
+
+      // Disparar evento para actualizar otros componentes
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("cartUpdated"))
+      }, 50)
     } catch (error) {
       console.error("Error al eliminar producto:", error)
       toast({
@@ -162,7 +170,9 @@ export default function CartItems() {
       setCartItems([])
 
       // Disparar evento para actualizar otros componentes
-      window.dispatchEvent(new CustomEvent("cartUpdated"))
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("cartUpdated"))
+      }, 50)
 
       toast({
         title: "Carrito vaciado",

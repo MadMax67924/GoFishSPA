@@ -16,17 +16,23 @@ export async function GET(request: Request) {
     const cartItems = serverCarts.get(cartId) || []
 
     // Enriquecer items con información del producto actualizada
-    const enrichedItems = cartItems.map((item) => {
-      const product = getProductById(item.productId)
-      return {
-        id: item.id,
-        product_id: item.productId,
-        quantity: item.quantity,
-        name: product?.name || "Producto no encontrado",
-        price: product?.price || 0,
-        image: product?.image || "/placeholder.svg",
-      }
-    })
+    const enrichedItems = cartItems
+      .map((item) => {
+        const product = getProductById(item.productId)
+        if (!product) {
+          console.warn(`Producto ${item.productId} no encontrado`)
+          return null
+        }
+        return {
+          id: item.id,
+          product_id: item.productId,
+          quantity: item.quantity,
+          name: product.name,
+          price: product.price,
+          image: product.image,
+        }
+      })
+      .filter(Boolean) // Remover items null
 
     return NextResponse.json({ items: enrichedItems })
   } catch (error) {
@@ -67,6 +73,9 @@ export async function POST(request: Request) {
 
     serverCarts.set(cartId, cartItems)
 
+    // Log para debug
+    console.log(`Carrito ${cartId} actualizado:`, cartItems.length, "items")
+
     const response = NextResponse.json({ success: true })
     response.cookies.set("cartId", cartId, {
       httpOnly: true,
@@ -102,6 +111,7 @@ export async function PUT(request: Request) {
     }
 
     serverCarts.set(cartId, cartItems)
+    console.log(`Carrito ${cartId} cantidad actualizada`)
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Error al actualizar carrito:", error)
@@ -122,7 +132,7 @@ export async function DELETE(request: Request) {
     let cartItems = serverCarts.get(cartId) || []
     cartItems = cartItems.filter((item) => item.id !== itemId)
     serverCarts.set(cartId, cartItems)
-
+    console.log(`Item eliminado del carrito ${cartId}`)
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Error al eliminar item del carrito:", error)

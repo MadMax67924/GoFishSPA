@@ -2,46 +2,38 @@
 
 import { useEffect, useState } from "react"
 
-export default function CartIndicator() {
+const CartIndicator = () => {
   const [itemCount, setItemCount] = useState(0)
 
-  useEffect(() => {
-    const fetchCartCount = async () => {
-      try {
-        const response = await fetch("/api/cart")
-
-        if (!response.ok) throw new Error("Error al cargar el carrito")
-
-        const data = await response.json()
-        const items = data.items || []
-        const count = items.reduce((acc: number, item: any) => acc + item.quantity, 0)
-
-        setItemCount(count)
-      } catch (error) {
-        console.error("Error:", error)
-        // Usar datos de ejemplo si falla la carga
-        setItemCount(3)
-      }
+  const fetchCartCount = async () => {
+    // Obtener el carrito del localStorage
+    const cart = localStorage.getItem("cart")
+    if (cart) {
+      const cartItems = JSON.parse(cart)
+      // Calcular el número total de elementos en el carrito
+      const totalItems = cartItems.reduce((total: number, item: { quantity: number }) => total + item.quantity, 0)
+      setItemCount(totalItems)
+    } else {
+      setItemCount(0)
     }
+  }
 
+  // Escuchar eventos de actualización del carrito
+  useEffect(() => {
     fetchCartCount()
 
-    // Actualizar el contador cada vez que se modifica el carrito
-    const handleStorageChange = () => {
+    const handleCartUpdate = () => {
       fetchCartCount()
     }
 
-    window.addEventListener("storage", handleStorageChange)
-    return () => window.removeEventListener("storage", handleStorageChange)
+    window.addEventListener("cartUpdated", handleCartUpdate)
+
+    return () => {
+      window.removeEventListener("cartUpdated", handleCartUpdate)
+    }
   }, [])
 
-  if (itemCount === 0) {
-    return null
-  }
-
-  return (
-    <span className="absolute -top-2 -right-2 bg-[#e9c46a] text-[#005f73] text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-      {itemCount > 9 ? "9+" : itemCount}
-    </span>
-  )
+  return <div>Carrito: {itemCount} items</div>
 }
+
+export default CartIndicator
