@@ -22,45 +22,55 @@ export default function CartSummary() {
   })
   const [loading, setLoading] = useState(true)
 
+  const fetchCartSummary = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch("/api/cart")
+
+      if (!response.ok) throw new Error("Error al cargar el resumen del carrito")
+
+      const data = await response.json()
+
+      // Calcular el resumen
+      const items = data.items || []
+      const itemCount = items.reduce((acc: number, item: any) => acc + item.quantity, 0)
+      const subtotal = items.reduce((acc: number, item: any) => acc + item.price * item.quantity, 0)
+
+      // Envío gratis por encima de cierto monto
+      const shipping = subtotal > 30000 ? 0 : 5000
+
+      setSummary({
+        subtotal,
+        shipping,
+        total: subtotal + shipping,
+        itemCount,
+      })
+    } catch (error) {
+      console.error("Error:", error)
+      setSummary({
+        subtotal: 0,
+        shipping: 5000,
+        total: 5000,
+        itemCount: 0,
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
-    const fetchCartSummary = async () => {
-      setLoading(true)
-      try {
-        const response = await fetch("/api/cart")
+    fetchCartSummary()
 
-        if (!response.ok) throw new Error("Error al cargar el resumen del carrito")
-
-        const data = await response.json()
-
-        // Calcular el resumen
-        const items = data.items || []
-        const itemCount = items.reduce((acc: number, item: any) => acc + item.quantity, 0)
-        const subtotal = items.reduce((acc: number, item: any) => acc + item.price * item.quantity, 0)
-
-        // Envío gratis por encima de cierto monto
-        const shipping = subtotal > 30000 ? 0 : 5000
-
-        setSummary({
-          subtotal,
-          shipping,
-          total: subtotal + shipping,
-          itemCount,
-        })
-      } catch (error) {
-        console.error("Error:", error)
-        // Usar datos de ejemplo si falla la carga
-        setSummary({
-          subtotal: 30970,
-          shipping: 0,
-          total: 30970,
-          itemCount: 3,
-        })
-      } finally {
-        setLoading(false)
-      }
+    // Escuchar eventos de actualización del carrito
+    const handleCartUpdate = () => {
+      fetchCartSummary()
     }
 
-    fetchCartSummary()
+    window.addEventListener("cartUpdated", handleCartUpdate)
+
+    return () => {
+      window.removeEventListener("cartUpdated", handleCartUpdate)
+    }
   }, [])
 
   if (loading) {
@@ -81,6 +91,11 @@ export default function CartSummary() {
           <span className="text-gray-600">Envío</span>
           <span>{summary.shipping === 0 ? "Gratis" : `$${summary.shipping.toLocaleString()}`}</span>
         </div>
+        {summary.subtotal > 0 && summary.subtotal <= 30000 && (
+          <div className="text-sm text-blue-600">
+            Añade ${(30000 - summary.subtotal).toLocaleString()} más para envío gratis
+          </div>
+        )}
         <div className="border-t pt-4 flex justify-between font-bold">
           <span>Total</span>
           <span>${summary.total.toLocaleString()}</span>
@@ -88,9 +103,9 @@ export default function CartSummary() {
       </CardContent>
       <CardFooter>
         <Link href="/checkout" className="w-full">
-          <Button className="w-full bg-[#005f73] hover:bg-[#003d4d] h-12 text-lg">
+          <Button className="w-full bg-[#005f73] hover:bg-[#003d4d] h-12 text-lg" disabled={summary.itemCount === 0}>
             <ShoppingBag className="mr-2 h-5 w-5" />
-            Proceder al pago
+            {summary.itemCount === 0 ? "Carrito vacío" : "Proceder al pago"}
           </Button>
         </Link>
       </CardFooter>

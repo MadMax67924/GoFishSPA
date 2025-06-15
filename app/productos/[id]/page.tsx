@@ -5,6 +5,7 @@ import Footer from "@/components/footer"
 import AddToCartButton from "@/components/add-to-cart-button"
 import RelatedProducts from "@/components/related-products"
 import { Suspense } from "react"
+import { getProductById } from "@/lib/products-data"
 
 interface ProductPageProps {
   params: {
@@ -12,30 +13,9 @@ interface ProductPageProps {
   }
 }
 
-async function getProduct(id: string) {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-    const response = await fetch(`${baseUrl}/api/products/${id}`, {
-      cache: "no-store", // Asegurar datos frescos
-    })
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        return null
-      }
-      throw new Error(`Error ${response.status}: ${response.statusText}`)
-    }
-
-    const product = await response.json()
-    return product
-  } catch (error) {
-    console.error("Error al obtener producto:", error)
-    return null
-  }
-}
-
 export async function generateMetadata({ params }: ProductPageProps) {
-  const product = await getProduct(params.id)
+  const productId = Number.parseInt(params.id)
+  const product = getProductById(productId)
 
   if (!product) {
     return {
@@ -50,8 +30,9 @@ export async function generateMetadata({ params }: ProductPageProps) {
   }
 }
 
-export default async function ProductPage({ params }: ProductPageProps) {
-  const product = await getProduct(params.id)
+export default function ProductPage({ params }: ProductPageProps) {
+  const productId = Number.parseInt(params.id)
+  const product = getProductById(productId)
 
   if (!product) {
     notFound()
