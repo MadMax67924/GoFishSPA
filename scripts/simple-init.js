@@ -6,7 +6,7 @@ async function createBasicTables() {
   const connection = await mysql.createConnection({
     host: "localhost",
     user: "root",
-    password: "toki1801", 
+    password: "", // Cambia esto por tu contraseña
     database: "gofish",
   })
 
@@ -44,7 +44,7 @@ async function createBasicTables() {
       (4, 'Camarones', 12990.00, '/images/camarones.jpg', 'mariscos', 30)
     `)
 
-    console.log(" Tablas básicas creadas exitosamente")
+    console.log("✅ Tablas básicas creadas exitosamente")
   } catch (error) {
     console.error("Error:", error)
   } finally {

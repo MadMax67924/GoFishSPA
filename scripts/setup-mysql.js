@@ -14,7 +14,8 @@ async function setupDatabase() {
       database: process.env.DB_NAME || "gofish_db",
     })
 
-    console.log(" Conexión exitosa a MySQL")
+    console.log("✅ Conexión exitosa a MySQL")
+
     // Verificar si las tablas ya existen
     const [tables] = await connection.execute(
       "SELECT TABLE_NAME FROM information_schema.tables WHERE table_schema = ? AND TABLE_NAME IN ('products', 'users', 'orders', 'order_items')",
@@ -22,11 +23,11 @@ async function setupDatabase() {
     )
 
     const existingTables = tables.map((row) => row.TABLE_NAME)
-    console.log(" Tablas existentes:", existingTables)
+    console.log("📋 Tablas existentes:", existingTables)
 
     // Crear tabla de productos si no existe
     if (!existingTables.includes("products")) {
-      console.log(" Creando tabla products...")
+      console.log("🔄 Creando tabla products...")
       await connection.execute(`
         CREATE TABLE products (
           id INT AUTO_INCREMENT PRIMARY KEY,
@@ -41,12 +42,12 @@ async function setupDatabase() {
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         )
       `)
-      console.log(" Tabla products creada")
+      console.log("✅ Tabla products creada")
     }
 
     // Crear tabla de usuarios si no existe
     if (!existingTables.includes("users")) {
-      console.log(" Creando tabla users...")
+      console.log("🔄 Creando tabla users...")
       await connection.execute(`
         CREATE TABLE users (
           id INT AUTO_INCREMENT PRIMARY KEY,
@@ -62,12 +63,12 @@ async function setupDatabase() {
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         )
       `)
-      console.log(" Tabla users creada")
+      console.log("✅ Tabla users creada")
     }
 
     // Crear tabla de órdenes si no existe
     if (!existingTables.includes("orders")) {
-      console.log(" Creando tabla orders...")
+      console.log("🔄 Creando tabla orders...")
       await connection.execute(`
         CREATE TABLE orders (
           id INT AUTO_INCREMENT PRIMARY KEY,
@@ -80,12 +81,12 @@ async function setupDatabase() {
           FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
         )
       `)
-      console.log(" Tabla orders creada")
+      console.log("✅ Tabla orders creada")
     }
 
     // Crear tabla de items de órdenes si no existe
     if (!existingTables.includes("order_items")) {
-      console.log(" Creando tabla order_items...")
+      console.log("🔄 Creando tabla order_items...")
       await connection.execute(`
         CREATE TABLE order_items (
           id INT AUTO_INCREMENT PRIMARY KEY,
@@ -98,14 +99,14 @@ async function setupDatabase() {
           FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
         )
       `)
-      console.log(" Tabla order_items creada")
+      console.log("✅ Tabla order_items creada")
     }
 
     // Verificar si ya hay productos
     const [productCount] = await connection.execute("SELECT COUNT(*) as count FROM products")
 
     if (productCount[0].count === 0) {
-      console.log(" Insertando productos de ejemplo...")
+      console.log("🔄 Insertando productos de ejemplo...")
 
       const products = [
         {
@@ -200,16 +201,16 @@ async function setupDatabase() {
         )
       }
 
-      console.log(" Productos insertados correctamente")
+      console.log("✅ Productos insertados correctamente")
     } else {
-      console.log(" Ya existen productos en la base de datos")
+      console.log("ℹ️ Ya existen productos en la base de datos")
     }
 
     // Verificar si ya hay usuarios admin
     const [adminCount] = await connection.execute('SELECT COUNT(*) as count FROM users WHERE role = "admin"')
 
     if (adminCount[0].count === 0) {
-      console.log(" Creando usuario administrador...")
+      console.log("🔄 Creando usuario administrador...")
 
       // Hash simple para desarrollo (en producción usar bcrypt)
       const bcrypt = require("bcryptjs")
@@ -220,15 +221,15 @@ async function setupDatabase() {
         ["admin@gofish.com", hashedPassword, "Administrador", "admin", true],
       )
 
-      console.log(" Usuario administrador creado")
-      console.log(" Email: admin@gofish.com")
-      console.log(" Password: admin123")
+      console.log("✅ Usuario administrador creado")
+      console.log("📧 Email: admin@gofish.com")
+      console.log("🔑 Password: admin123")
     } else {
-      console.log("Ya existe un usuario administrador")
+      console.log("ℹ️ Ya existe un usuario administrador")
     }
 
-    console.log("\n ¡Base de datos configurada correctamente!")
-    console.log(" Resumen:")
+    console.log("\n🎉 ¡Base de datos configurada correctamente!")
+    console.log("📊 Resumen:")
 
     const [finalProductCount] = await connection.execute("SELECT COUNT(*) as count FROM products")
     const [finalUserCount] = await connection.execute("SELECT COUNT(*) as count FROM users")
@@ -237,7 +238,7 @@ async function setupDatabase() {
     console.log(`   - Usuarios: ${finalUserCount[0].count}`)
     console.log("   - Tablas: products, users, orders, order_items")
   } catch (error) {
-    console.error(" Error al configurar la base de datos:", error)
+    console.error("❌ Error al configurar la base de datos:", error)
     process.exit(1)
   } finally {
     if (connection) {

@@ -1,20 +1,50 @@
+# GoFish SpA - Distribuidora de Productos Marinos
+
+*Automatically synced with your [v0.dev](https://v0.dev) deployments*
+
+[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/maxigarin06-6106s-projects/v0-agregar-mongodb-a-pagina)
+[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/iKqwVPnxoBY)
+
 ## Overview
 
 Aplicación web para la distribuidora de productos marinos GoFish SpA. Permite a los usuarios navegar, buscar y comprar productos marinos frescos con un sistema completo de carrito de compras y gestión de pedidos.
 
+## Tecnologías
+
+- **Frontend**: Next.js 15, React 19, TypeScript
+- **Styling**: Tailwind CSS, shadcn/ui
+- **Base de datos**: MySQL
+- **Autenticación**: JWT con bcryptjs
+- **Deployment**: Vercel
+
 ## Características
 
--  Búsqueda global de productos
-- Carrito de compras completo
-- Sistema de autenticación y registro
-- Diseño responsive
-- Recuperación de contraseñas
-- Verificación por email
-- Seguridad con bloqueo de cuentas
-- Gestión de pedidos
-- Filtros y ordenamiento de productos
+- 🔍 Búsqueda global de productos
+- 🛒 Carrito de compras completo
+- 👤 Sistema de autenticación y registro
+- 📱 Diseño responsive
+- 🔐 Recuperación de contraseñas
+- 📧 Verificación por email
+- 🛡️ Seguridad con bloqueo de cuentas
+- 📦 Gestión de pedidos
+- 📊 Filtros y ordenamiento de productos
 
 ## Configuración
+
+### Variables de Entorno Requeridas
+
+\`\`\`env
+# Base de datos MySQL
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=tu_password
+DB_NAME=gofish
+
+# Autenticación
+JWT_SECRET=tu_jwt_secret_muy_seguro
+\`\`\`
+
 ### Instalación
 
 1. Clona el repositorio
@@ -39,3 +69,27 @@ Aplicación web para la distribuidora de productos marinos GoFish SpA. Permite a
 ├── scripts/               # Scripts de configuración
 └── public/                # Archivos estáticos
 \`\`\`
+
+## Deployment
+
+Your project is live at:
+
+**[https://vercel.com/maxigarin06-6106s-projects/v0-agregar-mongodb-a-pagina](https://vercel.com/maxigarin06-6106s-projects/v0-agregar-mongodb-a-pagina)**
+
+## Build your app
+
+Continue building your app on:
+
+**[https://v0.dev/chat/projects/iKqwVPnxoBY](https://v0.dev/chat/projects/iKqwVPnxoBY)**
+
+## Usuario Administrador
+
+- **Email**: admin@gofish.cl
+- **Contraseña**: admin123
+
+## Soporte
+
+Para soporte técnico o consultas, contacta a través del formulario de contacto en la aplicación.
+\`\`\`
+
+Finalmente, voy a limpiar el script de test de conexión para que solo use MySQL:

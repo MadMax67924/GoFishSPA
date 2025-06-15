@@ -12,10 +12,10 @@ async function initializeDatabase() {
 
     // Crear conexión
     connection = await mysql.createConnection(DATABASE_URL)
-    console.log(" Conectado a MySQL")
+    console.log("✅ Conectado a MySQL")
 
     // Crear tablas una por una
-    console.log(" Creando tabla users...")
+    console.log("🔄 Creando tabla users...")
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS users (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -44,9 +44,9 @@ async function initializeDatabase() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )
     `)
-    console.log(" Tabla products creada")
+    console.log("✅ Tabla products creada")
 
-    console.log(" Creando tabla carts...")
+    console.log("🔄 Creando tabla carts...")
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS carts (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -57,9 +57,9 @@ async function initializeDatabase() {
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       )
     `)
-    console.log(" Tabla carts creada")
+    console.log("✅ Tabla carts creada")
 
-    console.log("Creando tabla cart_items...")
+    console.log("🔄 Creando tabla cart_items...")
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS cart_items (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -73,9 +73,9 @@ async function initializeDatabase() {
         UNIQUE KEY unique_cart_product (cart_id, product_id)
       )
     `)
-    console.log(" Tabla cart_items creada")
+    console.log("✅ Tabla cart_items creada")
 
-    console.log(" Creando tabla orders...")
+    console.log("🔄 Creando tabla orders...")
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS orders (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -100,9 +100,9 @@ async function initializeDatabase() {
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
       )
     `)
-    console.log(" Tabla orders creada")
+    console.log("✅ Tabla orders creada")
 
-    console.log(" Creando tabla order_items...")
+    console.log("🔄 Creando tabla order_items...")
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS order_items (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -117,9 +117,9 @@ async function initializeDatabase() {
         FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT
       )
     `)
-    console.log(" Tabla order_items creada")
+    console.log("✅ Tabla order_items creada")
 
-    console.log(" Creando tabla contacts...")
+    console.log("🔄 Creando tabla contacts...")
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS contacts (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -131,9 +131,9 @@ async function initializeDatabase() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )
     `)
-    console.log("Tabla contacts creada")
+    console.log("✅ Tabla contacts creada")
 
-    console.log("Insertando productos de ejemplo...")
+    console.log("🔄 Insertando productos de ejemplo...")
 
     // Verificar si ya existen productos
     const [existingProducts] = await connection.execute("SELECT COUNT(*) as count FROM products")
@@ -220,12 +220,12 @@ async function initializeDatabase() {
           product,
         )
       }
-      console.log("Productos de ejemplo insertados")
+      console.log("✅ Productos de ejemplo insertados")
     } else {
-      console.log("ℹ Los productos ya existen, saltando inserción")
+      console.log("ℹ️ Los productos ya existen, saltando inserción")
     }
 
-    console.log(" Creando usuario administrador...")
+    console.log("🔄 Creando usuario administrador...")
 
     // Verificar si ya existe el usuario admin
     const [existingAdmin] = await connection.execute(
@@ -242,16 +242,16 @@ async function initializeDatabase() {
         hashedPassword,
         "admin",
       ])
-      console.log(" Usuario administrador creado")
-      console.log(" Email: admin@gofish.cl")
-      console.log(" Contraseña: admin123")
+      console.log("✅ Usuario administrador creado")
+      console.log("📧 Email: admin@gofish.cl")
+      console.log("🔑 Contraseña: admin123")
     } else {
-      console.log(" El usuario administrador ya existe")
+      console.log("ℹ️ El usuario administrador ya existe")
     }
 
-    console.log(" ¡Base de datos inicializada correctamente!")
+    console.log("🎉 ¡Base de datos inicializada correctamente!")
   } catch (error) {
-    console.error(" Error al inicializar la base de datos:", error.message)
+    console.error("❌ Error al inicializar la base de datos:", error.message)
     throw error
   } finally {
     if (connection) {

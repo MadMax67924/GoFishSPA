@@ -1,11 +1,11 @@
 "use client"
 
-import { useEffect } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { ShoppingCart, X, CheckCircle } from "lucide-react"
+import { CheckCircle, ShoppingCart, X } from "lucide-react"
 
 interface Product {
   id: number
@@ -17,7 +17,7 @@ interface Product {
 interface AddToCartPopupProps {
   isOpen: boolean
   onClose: () => void
-  product: Product
+  product: Product | null
   quantity: number
   cartItemCount: number
   cartTotal: number
@@ -31,42 +31,47 @@ export default function AddToCartPopup({
   cartItemCount,
   cartTotal,
 }: AddToCartPopupProps) {
-  // Auto cerrar después de 5 segundos
+  const [isVisible, setIsVisible] = useState(false)
+
   useEffect(() => {
     if (isOpen) {
+      setIsVisible(true)
+      // Auto cerrar después de 5 segundos
       const timer = setTimeout(() => {
-        onClose()
+        handleClose()
       }, 5000)
       return () => clearTimeout(timer)
     }
-  }, [isOpen, onClose])
+  }, [isOpen])
 
-  // Cerrar con ESC
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose()
-      }
-    }
+  const handleClose = () => {
+    setIsVisible(false)
+    setTimeout(() => {
+      onClose()
+    }, 300) // Esperar a que termine la animación
+  }
 
-    if (isOpen) {
-      document.addEventListener("keydown", handleEsc)
-      return () => document.removeEventListener("keydown", handleEsc)
-    }
-  }, [isOpen, onClose])
-
-  if (!isOpen) return null
+  if (!isOpen || !product) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Overlay */}
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div
+        className={`absolute inset-0 bg-black transition-opacity duration-300 ${
+          isVisible ? "opacity-50" : "opacity-0"
+        }`}
+        onClick={handleClose}
+      />
 
-      {/* Modal */}
-      <Card className="relative w-full max-w-md mx-4 animate-in fade-in-0 zoom-in-95 duration-200">
+      {/* Popup */}
+      <Card
+        className={`relative w-full max-w-md transform transition-all duration-300 ${
+          isVisible ? "scale-100 opacity-100" : "scale-95 opacity-0"
+        }`}
+      >
         <CardContent className="p-6">
           {/* Botón cerrar */}
-          <Button variant="ghost" size="icon" onClick={onClose} className="absolute top-2 right-2 h-8 w-8">
+          <Button variant="ghost" size="icon" onClick={handleClose} className="absolute top-2 right-2 h-8 w-8">
             <X className="h-4 w-4" />
           </Button>
 
@@ -93,29 +98,32 @@ export default function AddToCartPopup({
             <div className="flex-grow min-w-0">
               <p className="font-medium text-sm truncate">{product.name}</p>
               <p className="text-sm text-gray-600">
-                {quantity} kg × ${product.price.toLocaleString()} = ${(product.price * quantity).toLocaleString()}
+                {quantity} kg × ${product.price.toLocaleString()}
               </p>
+            </div>
+            <div className="text-right">
+              <p className="font-semibold">${(product.price * quantity).toLocaleString()}</p>
             </div>
           </div>
 
           {/* Resumen del carrito */}
           <div className="bg-[#005f73] text-white p-3 rounded-lg mb-4">
             <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <ShoppingCart className="h-4 w-4" />
-                <span className="text-sm">Carrito ({cartItemCount} productos)</span>
-              </div>
+              <span className="text-sm">Carrito ({cartItemCount} productos)</span>
               <span className="font-semibold">${cartTotal.toLocaleString()}</span>
             </div>
           </div>
 
           {/* Botones de acción */}
           <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose} className="flex-1">
+            <Button variant="outline" onClick={handleClose} className="flex-1">
               Seguir comprando
             </Button>
             <Link href="/carrito" className="flex-1">
-              <Button className="w-full bg-[#005f73] hover:bg-[#003d4d]">Ver carrito</Button>
+              <Button className="w-full bg-[#005f73] hover:bg-[#003d4d]">
+                <ShoppingCart className="mr-2 h-4 w-4" />
+                Ver carrito
+              </Button>
             </Link>
           </div>
         </CardContent>
