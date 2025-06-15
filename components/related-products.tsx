@@ -99,7 +99,7 @@ export default function RelatedProducts({ currentProductId, category }: RelatedP
         >
           <div className="relative h-48">
             <Image
-              src={product.image || "/placeholder.svg"}
+              src={product.image}
               alt={product.name}
               fill
               className="object-cover"

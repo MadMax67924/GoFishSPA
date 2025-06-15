@@ -40,7 +40,7 @@ export default function ProductImageGallery({ images, productName }: ProductImag
       {/* Imagen principal */}
       <div className="relative h-80 md:h-96 group">
         <Image
-          src={images[currentImageIndex] || "/placeholder.svg"}
+          src={images[currentImageIndex]}
           alt={`${productName} - Imagen ${currentImageIndex + 1}`}
           fill
           className="object-cover rounded-lg"
@@ -56,13 +56,13 @@ export default function ProductImageGallery({ images, productName }: ProductImag
               className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <ZoomIn className="h-4 w-4 mr-1" />
-              Ver en alta calidad
+              Expandir
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[90vh] p-0">
             <div className="relative w-full h-[80vh]">
               <Image
-                src={images[currentImageIndex] || "/placeholder.svg"}
+                src={images[currentImageIndex]}
                 alt={`${productName} - Imagen en alta calidad`}
                 fill
                 className="object-contain"
@@ -136,7 +136,7 @@ export default function ProductImageGallery({ images, productName }: ProductImag
               }`}
             >
               <Image
-                src={image || "/placeholder.svg"}
+                src={image}
                 alt={`${productName} - Miniatura ${index + 1}`}
                 fill
                 className="object-cover"
