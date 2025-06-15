@@ -1,5 +1,3 @@
-
-
 ## Overview
 
 Aplicación web para la distribuidora de productos marinos GoFish SpA. Permite a los usuarios navegar, buscar y comprar productos marinos frescos con un sistema completo de carrito de compras y gestión de pedidos.
@@ -41,4 +39,3 @@ Aplicación web para la distribuidora de productos marinos GoFish SpA. Permite a
 ├── scripts/               # Scripts de configuración
 └── public/                # Archivos estáticos
 \`\`\`
-
