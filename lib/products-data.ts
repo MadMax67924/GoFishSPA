@@ -219,13 +219,3 @@ export function getProductById(id: number): Product | null {
 export function getRelatedProducts(productId: number, category: string, limit = 4): Product[] {
   return PRODUCTS_DATA.filter((p) => p.id !== productId && p.category === category).slice(0, limit)
 }
-
-// Función para obtener productos destacados
-export function getFeaturedProducts(limit = 4): Product[] {
-  return PRODUCTS_DATA.filter((p) => p.featured).slice(0, limit)
-}
-
-// Función para obtener categorías únicas
-export function getCategories(): string[] {
-  return [...new Set(PRODUCTS_DATA.map((p) => p.category))]
-}
