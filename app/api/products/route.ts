@@ -4,15 +4,16 @@ import { PRODUCTS_DATA, filterAndSortProducts } from "@/lib/products-data"
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
-    const query = searchParams.get("q") || ""
-    const categories = searchParams.getAll("category")
-    const minPrice = Number(searchParams.get("minPrice") || 0)
-    const maxPrice = Number(searchParams.get("maxPrice") || 999999)
-    const sortBy = searchParams.get("sortBy") || "name"
-    const sortOrder = searchParams.get("sortOrder") || "asc"
-    const limit = searchParams.get("limit") ? Number(searchParams.get("limit")) : undefined
+    const query = searchParams.get("q") || undefined
+    const categories = searchParams.get("categories")?.split(",") || undefined
+    const minPrice = searchParams.get("minPrice") ? Number.parseInt(searchParams.get("minPrice")!) : undefined
+    const maxPrice = searchParams.get("maxPrice") ? Number.parseInt(searchParams.get("maxPrice")!) : undefined
+    const sortBy = searchParams.get("sortBy") || undefined
+    const sortOrder = searchParams.get("sortOrder") || undefined
+    const limit = searchParams.get("limit") ? Number.parseInt(searchParams.get("limit")!) : undefined
 
-    console.log("API Products - Parámetros:", {
+    const products = filterAndSortProducts(
+      PRODUCTS_DATA,
       query,
       categories,
       minPrice,
@@ -20,48 +21,11 @@ export async function GET(request: Request) {
       sortBy,
       sortOrder,
       limit,
-    })
-
-    const filteredProducts = filterAndSortProducts(
-      PRODUCTS_DATA,
-      query,
-      categories.length > 0 ? categories : undefined,
-      minPrice,
-      maxPrice,
-      sortBy,
-      sortOrder,
-      limit,
     )
 
-    console.log(`API Products - Devolviendo ${filteredProducts.length} productos`)
-
-    return NextResponse.json(filteredProducts)
+    return NextResponse.json(products)
   } catch (error) {
-    console.error("Error en API de productos:", error)
-    return NextResponse.json(PRODUCTS_DATA)
-  }
-}
-
-export async function POST(request: Request) {
-  try {
-    const { name, description, price, image, category, stock, featured } = await request.json()
-
-    // Simular creación de producto
-    const newProduct = {
-      id: Math.max(...PRODUCTS_DATA.map((p) => p.id)) + 1,
-      name,
-      description,
-      price,
-      image,
-      category,
-      stock,
-      featured: featured || false,
-      images: [image],
-    }
-
-    return NextResponse.json({ success: true, product: newProduct })
-  } catch (error) {
-    console.error("Error al crear producto:", error)
-    return NextResponse.json({ error: "Error al crear producto" }, { status: 500 })
+    console.error("Error al obtener productos:", error)
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
 }

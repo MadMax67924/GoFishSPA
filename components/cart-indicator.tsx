@@ -1,26 +1,47 @@
 "use client"
 
-import Link from "next/link"
-import { ShoppingCart } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { useCart } from "@/contexts/cart-context"
+import { useEffect, useState } from "react"
 
 export default function CartIndicator() {
-  const { itemCount, total } = useCart()
+  const [itemCount, setItemCount] = useState(0)
+
+  useEffect(() => {
+    const fetchCartCount = async () => {
+      try {
+        const response = await fetch("/api/cart")
+
+        if (!response.ok) throw new Error("Error al cargar el carrito")
+
+        const data = await response.json()
+        const items = data.items || []
+        const count = items.reduce((acc: number, item: any) => acc + item.quantity, 0)
+
+        setItemCount(count)
+      } catch (error) {
+        console.error("Error:", error)
+        // Usar datos de ejemplo si falla la carga
+        setItemCount(3)
+      }
+    }
+
+    fetchCartCount()
+
+    // Actualizar el contador cada vez que se modifica el carrito
+    const handleStorageChange = () => {
+      fetchCartCount()
+    }
+
+    window.addEventListener("storage", handleStorageChange)
+    return () => window.removeEventListener("storage", handleStorageChange)
+  }, [])
+
+  if (itemCount === 0) {
+    return null
+  }
 
   return (
-    <Link href="/carrito">
-      <Button variant="ghost" className="relative p-2">
-        <ShoppingCart className="h-6 w-6" />
-        {itemCount > 0 && (
-          <>
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-              {itemCount > 99 ? "99+" : itemCount}
-            </span>
-            <span className="hidden md:block ml-2 text-sm font-medium">${total.toLocaleString()}</span>
-          </>
-        )}
-      </Button>
-    </Link>
+    <span className="absolute -top-2 -right-2 bg-[#e9c46a] text-[#005f73] text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+      {itemCount > 9 ? "9+" : itemCount}
+    </span>
   )
 }

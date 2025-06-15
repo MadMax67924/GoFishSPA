@@ -3,7 +3,7 @@ import { testConnection, executeQuery } from "@/lib/mysql"
 
 export async function GET() {
   try {
-    console.log("🔍 Iniciando test de conexión a base de datos...")
+    console.log(" Iniciando test de conexión a base de datos...")
 
     // Probar conexión
     const isConnected = await testConnection()
@@ -32,7 +32,7 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      message: "✅ Conexión exitosa a base de datos GoFish",
+      message: " Conexión exitosa a base de datos GoFish",
       database_info: {
         host: "127.0.0.1",
         port: 3306,
@@ -56,7 +56,7 @@ export async function GET() {
       },
     })
   } catch (error) {
-    console.error("❌ Error en test de base de datos:", error)
+    console.error(" Error en test de base de datos:", error)
 
     return NextResponse.json(
       {

@@ -7,9 +7,9 @@ import ProductImageGallery from "@/components/product-image-gallery"
 import { Suspense } from "react"
 
 interface ProductPageProps {
-  params: Promise<{
+  params: {
     id: string
-  }>
+  }
 }
 
 async function getProduct(id: string) {
@@ -35,8 +35,7 @@ async function getProduct(id: string) {
 }
 
 export async function generateMetadata({ params }: ProductPageProps) {
-  const { id } = await params
-  const product = await getProduct(id)
+  const product = await getProduct(params.id)
 
   if (!product) {
     return {
@@ -52,8 +51,7 @@ export async function generateMetadata({ params }: ProductPageProps) {
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
-  const { id } = await params
-  const product = await getProduct(id)
+  const product = await getProduct(params.id)
 
   if (!product) {
     notFound()
