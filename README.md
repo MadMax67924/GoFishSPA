@@ -19,15 +19,15 @@ Aplicación web para la distribuidora de productos marinos GoFish SpA. Permite a
 
 ## Características
 
-- 🔍 Búsqueda global de productos
-- 🛒 Carrito de compras completo
-- 👤 Sistema de autenticación y registro
-- 📱 Diseño responsive
-- 🔐 Recuperación de contraseñas
-- 📧 Verificación por email
-- 🛡️ Seguridad con bloqueo de cuentas
-- 📦 Gestión de pedidos
-- 📊 Filtros y ordenamiento de productos
+-  Búsqueda global de productos
+- Carrito de compras completo
+- Sistema de autenticación y registro
+- Diseño responsive
+- Recuperación de contraseñas
+- Verificación por email
+- Seguridad con bloqueo de cuentas
+- Gestión de pedidos
+- Filtros y ordenamiento de productos
 
 ## Configuración
 
@@ -82,14 +82,3 @@ Continue building your app on:
 
 **[https://v0.dev/chat/projects/iKqwVPnxoBY](https://v0.dev/chat/projects/iKqwVPnxoBY)**
 
-## Usuario Administrador
-
-- **Email**: admin@gofish.cl
-- **Contraseña**: admin123
-
-## Soporte
-
-Para soporte técnico o consultas, contacta a través del formulario de contacto en la aplicación.
-\`\`\`
-
-Finalmente, voy a limpiar el script de test de conexión para que solo use MySQL:

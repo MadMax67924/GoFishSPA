@@ -4,35 +4,35 @@ async function setupDatabase() {
   let connection
 
   try {
-    console.log("🔄 Conectando a MySQL...")
+    console.log(" Conectando a MySQL...")
 
     // Configuración de conexión
     const config = {
       host: process.env.DB_HOST || "127.0.0.1",
       port: Number.parseInt(process.env.DB_PORT) || 3306,
       user: process.env.DB_USER || "root",
-      password: process.env.DB_PASSWORD || "",
+      password: process.env.DB_PASSWORD || "toki1801",
       database: process.env.DB_NAME || "gofish",
       charset: "utf8mb4",
       acquireTimeout: 60000,
       timeout: 60000,
     }
 
-    console.log(`📡 Conectando a ${config.host}:${config.port} como ${config.user}`)
+    console.log(` Conectando a ${config.host}:${config.port} como ${config.user}`)
 
     connection = await mysql.createConnection(config)
-    console.log("✅ Conexión exitosa a MySQL")
+    console.log(" Conexión exitosa a MySQL")
 
     // Verificar si las tablas ya existen
-    console.log("🔍 Verificando estructura de base de datos...")
+    console.log(" Verificando estructura de base de datos...")
     const [tables] = await connection.execute("SHOW TABLES")
     const existingTables = tables.map((row) => Object.values(row)[0])
 
-    console.log("📋 Tablas existentes:", existingTables.length > 0 ? existingTables : "ninguna")
+    console.log(" Tablas existentes:", existingTables.length > 0 ? existingTables : "ninguna")
 
     // Crear tabla de productos si no existe
     if (!existingTables.includes("products")) {
-      console.log("🔄 Creando tabla products...")
+      console.log(" Creando tabla products...")
       await connection.execute(`
         CREATE TABLE products (
           id INT AUTO_INCREMENT PRIMARY KEY,
@@ -50,12 +50,12 @@ async function setupDatabase() {
           INDEX idx_name (name)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `)
-      console.log("✅ Tabla products creada")
+      console.log(" Tabla products creada")
     }
 
     // Crear tabla de usuarios si no existe
     if (!existingTables.includes("users")) {
-      console.log("🔄 Creando tabla users...")
+      console.log(" Creando tabla users...")
       await connection.execute(`
         CREATE TABLE users (
           id INT AUTO_INCREMENT PRIMARY KEY,
@@ -73,12 +73,12 @@ async function setupDatabase() {
           INDEX idx_role (role)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `)
-      console.log("✅ Tabla users creada")
+      console.log(" Tabla users creada")
     }
 
     // Crear tabla de carritos si no existe
     if (!existingTables.includes("carts")) {
-      console.log("🔄 Creando tabla carts...")
+      console.log(" Creando tabla carts...")
       await connection.execute(`
         CREATE TABLE carts (
           id INT AUTO_INCREMENT PRIMARY KEY,
@@ -91,12 +91,12 @@ async function setupDatabase() {
           INDEX idx_user (user_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `)
-      console.log("✅ Tabla carts creada")
+      console.log(" Tabla carts creada")
     }
 
     // Crear tabla de items del carrito si no existe
     if (!existingTables.includes("cart_items")) {
-      console.log("🔄 Creando tabla cart_items...")
+      console.log(" Creando tabla cart_items...")
       await connection.execute(`
         CREATE TABLE cart_items (
           id INT AUTO_INCREMENT PRIMARY KEY,
@@ -110,12 +110,12 @@ async function setupDatabase() {
           UNIQUE KEY unique_cart_product (cart_id, product_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `)
-      console.log("✅ Tabla cart_items creada")
+      console.log("Tabla cart_items creada")
     }
 
     // Crear tabla de órdenes si no existe
     if (!existingTables.includes("orders")) {
-      console.log("🔄 Creando tabla orders...")
+      console.log(" Creando tabla orders...")
       await connection.execute(`
         CREATE TABLE orders (
           id INT AUTO_INCREMENT PRIMARY KEY,
@@ -137,12 +137,12 @@ async function setupDatabase() {
           INDEX idx_created_at (created_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `)
-      console.log("✅ Tabla orders creada")
+      console.log(" Tabla orders creada")
     }
 
     // Crear tabla de items de órdenes si no existe
     if (!existingTables.includes("order_items")) {
-      console.log("🔄 Creando tabla order_items...")
+      console.log(" Creando tabla order_items...")
       await connection.execute(`
         CREATE TABLE order_items (
           id INT AUTO_INCREMENT PRIMARY KEY,
@@ -157,14 +157,14 @@ async function setupDatabase() {
           FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `)
-      console.log("✅ Tabla order_items creada")
+      console.log(" Tabla order_items creada")
     }
 
     // Verificar si ya hay productos
     const [productCount] = await connection.execute("SELECT COUNT(*) as count FROM products")
 
     if (productCount[0].count === 0) {
-      console.log("🔄 Insertando productos de ejemplo...")
+      console.log(" Insertando productos de ejemplo...")
 
       const products = [
         [
@@ -248,16 +248,16 @@ async function setupDatabase() {
         )
       }
 
-      console.log("✅ Productos insertados correctamente")
+      console.log(" Productos insertados correctamente")
     } else {
-      console.log(`ℹ️ Ya existen ${productCount[0].count} productos en la base de datos`)
+      console.log(`ℹ Ya existen ${productCount[0].count} productos en la base de datos`)
     }
 
     // Verificar si ya hay usuarios admin
     const [adminCount] = await connection.execute('SELECT COUNT(*) as count FROM users WHERE role = "admin"')
 
     if (adminCount[0].count === 0) {
-      console.log("🔄 Creando usuario administrador...")
+      console.log(" Creando usuario administrador...")
 
       const bcrypt = require("bcryptjs")
       const hashedPassword = await bcrypt.hash("admin123", 10)
@@ -267,16 +267,16 @@ async function setupDatabase() {
         ["admin@gofish.cl", hashedPassword, "Administrador GoFish", "admin", true],
       )
 
-      console.log("✅ Usuario administrador creado")
-      console.log("📧 Email: admin@gofish.cl")
-      console.log("🔑 Password: admin123")
+      console.log("Usuario administrador creado")
+      console.log(" Email: admin@gofish.cl")
+      console.log(" Password: admin123")
     } else {
-      console.log("ℹ️ Ya existe un usuario administrador")
+      console.log(" Ya existe un usuario administrador")
     }
 
     // Resumen final
-    console.log("\n🎉 ¡Base de datos configurada correctamente!")
-    console.log("📊 Resumen:")
+    console.log("\n ¡Base de datos configurada correctamente!")
+    console.log(" Resumen:")
 
     const [finalProductCount] = await connection.execute("SELECT COUNT(*) as count FROM products")
     const [finalUserCount] = await connection.execute("SELECT COUNT(*) as count FROM users")
@@ -288,21 +288,21 @@ async function setupDatabase() {
     console.log("   - Base de datos: gofish")
     console.log("   - Host: 127.0.0.1:3306")
   } catch (error) {
-    console.error("❌ Error al configurar la base de datos:")
+    console.error(" Error al configurar la base de datos:")
     console.error("   Mensaje:", error.message)
     console.error("   Código:", error.code)
 
     if (error.code === "ECONNREFUSED") {
-      console.error("\n💡 Sugerencias:")
+      console.error("\n Sugerencias:")
       console.error("   - Verifica que MySQL esté ejecutándose")
       console.error("   - Confirma que el puerto 3306 esté disponible")
       console.error("   - Revisa las credenciales de conexión")
     } else if (error.code === "ER_ACCESS_DENIED_ERROR") {
-      console.error("\n💡 Sugerencias:")
+      console.error("\n Sugerencias:")
       console.error("   - Verifica el usuario y contraseña")
       console.error("   - Confirma los permisos del usuario")
     } else if (error.code === "ER_BAD_DB_ERROR") {
-      console.error("\n💡 Sugerencias:")
+      console.error("\n Sugerencias:")
       console.error("   - Crea la base de datos 'gofish' manualmente")
       console.error("   - Verifica el nombre de la base de datos")
     }
@@ -321,7 +321,7 @@ try {
   require("mysql2/promise")
   setupDatabase()
 } catch (error) {
-  console.error("❌ Error: mysql2 no está instalado")
-  console.error("💡 Ejecuta primero: npm install")
+  console.error("Error: mysql2 no está instalado")
+  console.error(" Ejecuta primero: npm install")
   process.exit(1)
 }
