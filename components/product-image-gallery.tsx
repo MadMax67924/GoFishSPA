@@ -3,17 +3,20 @@
 import { useState } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
-import { ChevronLeft, ChevronRight, ZoomIn } from "lucide-react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 
 interface ProductImageGalleryProps {
   images: string[]
   productName: string
+  showPhotoButton?: boolean
 }
 
-export default function ProductImageGallery({ images, productName }: ProductImageGalleryProps) {
+export default function ProductImageGallery({
+  images,
+  productName,
+  showPhotoButton = false,
+}: ProductImageGalleryProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
-  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length)
@@ -45,56 +48,13 @@ export default function ProductImageGallery({ images, productName }: ProductImag
           fill
           className="object-cover rounded-lg"
           priority
+          onError={(e) => {
+            console.log(`Error loading image: ${images[currentImageIndex]}`)
+            e.currentTarget.src = "/placeholder.svg?height=400&width=400"
+          }}
         />
 
-        {/* CU20: Botón para ver en alta calidad */}
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogTrigger asChild>
-            <Button
-              variant="secondary"
-              size="sm"
-              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <ZoomIn className="h-4 w-4 mr-1" />
-              Ver en alta calidad
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] p-0">
-            <div className="relative w-full h-[80vh]">
-              <Image
-                src={images[currentImageIndex] || "/placeholder.svg"}
-                alt={`${productName} - Imagen en alta calidad`}
-                fill
-                className="object-contain"
-                quality={100}
-              />
-
-              {/* Controles en modal */}
-              {images.length > 1 && (
-                <>
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="absolute left-2 top-1/2 transform -translate-y-1/2"
-                    onClick={prevImage}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2"
-                    onClick={nextImage}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Controles de navegación */}
+        {/* Navigation controls - only show if multiple images */}
         {images.length > 1 && (
           <>
             <Button
@@ -102,6 +62,7 @@ export default function ProductImageGallery({ images, productName }: ProductImag
               size="icon"
               className="absolute left-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
               onClick={prevImage}
+              aria-label="Imagen anterior"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -110,13 +71,14 @@ export default function ProductImageGallery({ images, productName }: ProductImag
               size="icon"
               className="absolute right-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
               onClick={nextImage}
+              aria-label="Imagen siguiente"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </>
         )}
 
-        {/* Indicador de imagen actual */}
+        {/* Image counter - only show if multiple images */}
         {images.length > 1 && (
           <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-sm">
             {currentImageIndex + 1} / {images.length}
@@ -124,22 +86,26 @@ export default function ProductImageGallery({ images, productName }: ProductImag
         )}
       </div>
 
-      {/* Miniaturas */}
+      {/* Thumbnails - only show if multiple images */}
       {images.length > 1 && (
         <div className="flex gap-2 overflow-x-auto">
           {images.map((image, index) => (
             <button
               key={index}
               onClick={() => selectImage(index)}
-              className={`relative h-16 w-16 flex-shrink-0 rounded border-2 overflow-hidden ${
-                index === currentImageIndex ? "border-[#2a9d8f]" : "border-gray-300"
+              className={`relative h-16 w-16 flex-shrink-0 rounded border-2 overflow-hidden transition-colors ${
+                index === currentImageIndex ? "border-[#2a9d8f]" : "border-gray-300 hover:border-gray-400"
               }`}
+              aria-label={`Ver imagen ${index + 1}`}
             >
               <Image
                 src={image || "/placeholder.svg"}
                 alt={`${productName} - Miniatura ${index + 1}`}
                 fill
                 className="object-cover"
+                onError={(e) => {
+                  e.currentTarget.src = "/placeholder.svg?height=64&width=64"
+                }}
               />
             </button>
           ))}
