@@ -2,38 +2,63 @@
 
 import { useEffect, useState } from "react"
 
-const CartIndicator = () => {
+export default function CartIndicator() {
   const [itemCount, setItemCount] = useState(0)
 
   const fetchCartCount = async () => {
-    // Obtener el carrito del localStorage
-    const cart = localStorage.getItem("cart")
-    if (cart) {
-      const cartItems = JSON.parse(cart)
-      // Calcular el número total de elementos en el carrito
-      const totalItems = cartItems.reduce((total: number, item: { quantity: number }) => total + item.quantity, 0)
-      setItemCount(totalItems)
-    } else {
+    try {
+      const response = await fetch("/api/cart", {
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache",
+        },
+      })
+
+      if (!response.ok) throw new Error("Error al cargar el carrito")
+
+      const data = await response.json()
+      const items = data.items || []
+      const count = items.reduce((acc: number, item: any) => acc + (item.quantity || 0), 0)
+
+      setItemCount(count)
+    } catch (error) {
+      console.error("Error:", error)
       setItemCount(0)
     }
   }
 
-  // Escuchar eventos de actualización del carrito
   useEffect(() => {
     fetchCartCount()
 
+    // Actualizar el contador cada vez que se modifica el carrito
     const handleCartUpdate = () => {
-      fetchCartCount()
+      setTimeout(() => {
+        fetchCartCount()
+      }, 100)
+    }
+
+    const handleCartCleared = () => {
+      setItemCount(0)
     }
 
     window.addEventListener("cartUpdated", handleCartUpdate)
+    window.addEventListener("productAdded", handleCartUpdate)
+    window.addEventListener("cartCleared", handleCartCleared)
 
     return () => {
       window.removeEventListener("cartUpdated", handleCartUpdate)
+      window.removeEventListener("productAdded", handleCartUpdate)
+      window.removeEventListener("cartCleared", handleCartCleared)
     }
   }, [])
 
-  return <div>Carrito: {itemCount} items</div>
-}
+  if (itemCount === 0) {
+    return null
+  }
 
-export default CartIndicator
+  return (
+    <span className="absolute -top-2 -right-2 bg-[#e9c46a] text-[#005f73] text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+      {itemCount > 9 ? "9+" : itemCount}
+    </span>
+  )
+}

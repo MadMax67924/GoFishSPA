@@ -137,10 +137,23 @@ export async function DELETE(request: Request) {
     }
 
     let cartItems = serverCarts.get(cartId) || []
+    const originalLength = cartItems.length
+
     cartItems = cartItems.filter((item) => item.id !== itemId)
-    serverCarts.set(cartId, cartItems)
-    console.log(`Item eliminado del carrito ${cartId}`)
-    return NextResponse.json({ success: true })
+
+    // Si se eliminó un item, actualizar el carrito
+    if (cartItems.length < originalLength) {
+      serverCarts.set(cartId, cartItems)
+      console.log(`Item ${itemId} eliminado del carrito ${cartId}. Items restantes: ${cartItems.length}`)
+    }
+
+    // Si el carrito queda vacío, asegurar que esté completamente limpio
+    if (cartItems.length === 0) {
+      serverCarts.delete(cartId)
+      console.log(`Carrito ${cartId} completamente vaciado y eliminado`)
+    }
+
+    return NextResponse.json({ success: true, itemsRemaining: cartItems.length })
   } catch (error) {
     console.error("Error al eliminar item del carrito:", error)
     return NextResponse.json({ error: "Error al eliminar item del carrito" }, { status: 500 })

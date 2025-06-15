@@ -37,20 +37,32 @@ export default function CartSummary() {
 
       const data = await response.json()
 
-      // Calcular el resumen con validación
+      // Calcular el resumen con validación estricta
       const items = data.items || []
-      const itemCount = items.reduce((acc: number, item: any) => {
-        return acc + (item.quantity || 0)
+
+      // Validar que los items sean válidos
+      const validItems = items.filter(
+        (item: any) =>
+          item &&
+          typeof item.quantity === "number" &&
+          typeof item.price === "number" &&
+          item.quantity > 0 &&
+          item.price > 0,
+      )
+
+      const itemCount = validItems.reduce((acc: number, item: any) => {
+        return acc + item.quantity
       }, 0)
 
-      const subtotal = items.reduce((acc: number, item: any) => {
-        const price = item.price || 0
-        const quantity = item.quantity || 0
-        return acc + price * quantity
+      const subtotal = validItems.reduce((acc: number, item: any) => {
+        return acc + item.price * item.quantity
       }, 0)
 
-      // Envío gratis por encima de $30.000, pero solo si hay productos
-      const shipping = itemCount > 0 ? (subtotal >= 30000 ? 0 : 5000) : 0
+      // Lógica de envío corregida
+      let shipping = 0
+      if (itemCount > 0) {
+        shipping = subtotal >= 30000 ? 0 : 5000
+      }
 
       setSummary({
         subtotal,
@@ -72,22 +84,31 @@ export default function CartSummary() {
   }
 
   useEffect(() => {
-    // Ejecutar inmediatamente
     fetchCartSummary()
 
-    // Escuchar eventos de actualización del carrito con pequeño delay
     const handleCartUpdate = () => {
       setTimeout(() => {
         fetchCartSummary()
-      }, 200) // Delay para asegurar que la API se haya actualizado
+      }, 200)
+    }
+
+    const handleCartCleared = () => {
+      setSummary({
+        subtotal: 0,
+        shipping: 0,
+        total: 0,
+        itemCount: 0,
+      })
     }
 
     window.addEventListener("cartUpdated", handleCartUpdate)
     window.addEventListener("productAdded", handleCartUpdate)
+    window.addEventListener("cartCleared", handleCartCleared)
 
     return () => {
       window.removeEventListener("cartUpdated", handleCartUpdate)
       window.removeEventListener("productAdded", handleCartUpdate)
+      window.removeEventListener("cartCleared", handleCartCleared)
     }
   }, [])
 
