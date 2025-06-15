@@ -71,6 +71,9 @@ export default function CartItems() {
 
     setUpdatingItems((prev) => new Set(prev).add(itemId))
 
+    // Actualización optimista del estado local PRIMERO
+    setCartItems(cartItems.map((item) => (item.id === itemId ? { ...item, quantity: newQuantity } : item)))
+
     try {
       const response = await fetch("/api/cart", {
         method: "PUT",
@@ -80,17 +83,18 @@ export default function CartItems() {
         body: JSON.stringify({ itemId, quantity: newQuantity }),
       })
 
-      if (!response.ok) throw new Error("Error al actualizar cantidad")
-
-      // ESPERAR a que la API confirme antes de actualizar
-      await fetchCart()
+      if (!response.ok) {
+        // Si falla, revertir el cambio optimista
+        await fetchCart()
+        throw new Error("Error al actualizar cantidad")
+      }
 
       toast({
         title: "Cantidad actualizada",
         description: "La cantidad del producto ha sido actualizada",
       })
 
-      // Disparar evento DESPUÉS de actualizar el estado
+      // Disparar evento para actualizar otros componentes
       window.dispatchEvent(new CustomEvent("cartUpdated"))
     } catch (error) {
       console.error("Error al actualizar cantidad:", error)
@@ -119,22 +123,26 @@ export default function CartItems() {
   const removeItem = async (itemId: string) => {
     setUpdatingItems((prev) => new Set(prev).add(itemId))
 
+    // Actualización optimista del estado local PRIMERO
+    setCartItems(cartItems.filter((item) => item.id !== itemId))
+
     try {
       const response = await fetch(`/api/cart?itemId=${itemId}`, {
         method: "DELETE",
       })
 
-      if (!response.ok) throw new Error("Error al eliminar producto")
-
-      // ESPERAR a que la API confirme antes de actualizar
-      await fetchCart()
+      if (!response.ok) {
+        // Si falla, recargar desde la API
+        await fetchCart()
+        throw new Error("Error al eliminar producto")
+      }
 
       toast({
         title: "Producto eliminado",
         description: "El producto ha sido eliminado del carrito",
       })
 
-      // Disparar evento DESPUÉS de actualizar el estado
+      // Disparar evento para actualizar otros componentes
       window.dispatchEvent(new CustomEvent("cartUpdated"))
     } catch (error) {
       console.error("Error al eliminar producto:", error)

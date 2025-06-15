@@ -73,6 +73,9 @@ export async function POST(request: Request) {
 
     serverCarts.set(cartId, cartItems)
 
+    // Pequeño delay para asegurar consistencia
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
     // Log para debug
     console.log(`Carrito ${cartId} actualizado:`, cartItems.length, "items")
 
@@ -111,6 +114,10 @@ export async function PUT(request: Request) {
     }
 
     serverCarts.set(cartId, cartItems)
+
+    // Pequeño delay para asegurar consistencia
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
     console.log(`Carrito ${cartId} cantidad actualizada`)
     return NextResponse.json({ success: true })
   } catch (error) {

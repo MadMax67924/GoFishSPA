@@ -39,6 +39,9 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({ productId, quantity =
       // Disparar evento para actualizar el carrito en tiempo real
       window.dispatchEvent(new CustomEvent("cartUpdated"))
 
+      // También disparar evento específico para productos añadidos
+      window.dispatchEvent(new CustomEvent("productAdded"))
+
       // Update local cart state (example - replace with your actual logic)
       const currentCart = JSON.parse(localStorage.getItem("cart") || "[]")
       const existingItemIndex = currentCart.findIndex((item: any) => item.productId === productId)

@@ -75,9 +75,11 @@ export default function CartSummary() {
     // Ejecutar inmediatamente
     fetchCartSummary()
 
-    // Escuchar eventos de actualización del carrito SIN delay
+    // Escuchar eventos de actualización del carrito con pequeño delay
     const handleCartUpdate = () => {
-      fetchCartSummary()
+      setTimeout(() => {
+        fetchCartSummary()
+      }, 200) // Delay para asegurar que la API se haya actualizado
     }
 
     window.addEventListener("cartUpdated", handleCartUpdate)
