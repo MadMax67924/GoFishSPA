@@ -20,6 +20,7 @@ export default function CartIndicator() {
       const items = data.items || []
       const count = items.reduce((acc: number, item: any) => acc + (item.quantity || 0), 0)
 
+      console.log(`CartIndicator: ${items.length} items, ${count} total quantity`)
       setItemCount(count)
     } catch (error) {
       console.error("Error:", error)
@@ -38,6 +39,7 @@ export default function CartIndicator() {
     }
 
     const handleCartCleared = () => {
+      console.log("Carrito limpiado - reseteando contador")
       setItemCount(0)
     }
 

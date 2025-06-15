@@ -88,17 +88,20 @@ export default function CartSummary() {
 
     const handleCartUpdate = () => {
       setTimeout(() => {
+        console.log("Actualizando resumen del carrito...")
         fetchCartSummary()
-      }, 200)
+      }, 150) // Delay ligeramente mayor para asegurar que la API se haya actualizado
     }
 
     const handleCartCleared = () => {
+      console.log("Carrito limpiado - reseteando summary")
       setSummary({
         subtotal: 0,
         shipping: 0,
         total: 0,
         itemCount: 0,
       })
+      setLoading(false)
     }
 
     window.addEventListener("cartUpdated", handleCartUpdate)

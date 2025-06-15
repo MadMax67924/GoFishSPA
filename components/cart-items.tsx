@@ -167,17 +167,26 @@ export default function CartItems() {
       // Actualizar estado local PRIMERO para feedback inmediato
       setCartItems([])
 
-      // Eliminar todos los items uno por uno
-      const itemsToDelete = [...cartItems] // Copia para evitar modificaciones durante el loop
-      for (const item of itemsToDelete) {
-        await fetch(`/api/cart?itemId=${item.id}`, {
-          method: "DELETE",
-        })
+      // Usar el endpoint específico para limpiar completamente
+      const response = await fetch("/api/cart/clear", {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        throw new Error("Error al vaciar carrito")
       }
 
-      // Disparar evento inmediatamente para actualizar otros componentes
-      window.dispatchEvent(new CustomEvent("cartUpdated"))
+      const result = await response.json()
+      console.log("Carrito limpiado:", result)
+
+      // Disparar múltiples eventos para asegurar sincronización completa
       window.dispatchEvent(new CustomEvent("cartCleared"))
+      window.dispatchEvent(new CustomEvent("cartUpdated"))
+
+      // Forzar actualización después de un pequeño delay
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("cartUpdated"))
+      }, 100)
 
       toast({
         title: "Carrito vaciado",
@@ -189,7 +198,7 @@ export default function CartItems() {
       await fetchCart()
       toast({
         title: "Error",
-        description: "No se pudo vaciar el carrito",
+        description: "No se pudo vaciar el carrito completamente",
         variant: "destructive",
       })
     }

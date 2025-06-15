@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
 import { getProductById } from "@/lib/products-data"
 
-// Simulación de carrito en memoria para el servidor
-const serverCarts = new Map<string, any[]>()
+// Simulación de carrito en memoria para el servidor - COMPARTIDA
+export const serverCarts = new Map<string, any[]>()
 
 function getCartId(request: Request): string {
   const cookieHeader = request.headers.get("cookie") || ""
@@ -143,17 +143,21 @@ export async function DELETE(request: Request) {
 
     // Si se eliminó un item, actualizar el carrito
     if (cartItems.length < originalLength) {
-      serverCarts.set(cartId, cartItems)
-      console.log(`Item ${itemId} eliminado del carrito ${cartId}. Items restantes: ${cartItems.length}`)
+      if (cartItems.length === 0) {
+        // Si no quedan items, eliminar completamente el carrito
+        serverCarts.delete(cartId)
+        console.log(`Carrito ${cartId} completamente eliminado - sin items restantes`)
+      } else {
+        serverCarts.set(cartId, cartItems)
+        console.log(`Item ${itemId} eliminado del carrito ${cartId}. Items restantes: ${cartItems.length}`)
+      }
     }
 
-    // Si el carrito queda vacío, asegurar que esté completamente limpio
-    if (cartItems.length === 0) {
-      serverCarts.delete(cartId)
-      console.log(`Carrito ${cartId} completamente vaciado y eliminado`)
-    }
-
-    return NextResponse.json({ success: true, itemsRemaining: cartItems.length })
+    return NextResponse.json({
+      success: true,
+      itemsRemaining: cartItems.length,
+      cartDeleted: cartItems.length === 0,
+    })
   } catch (error) {
     console.error("Error al eliminar item del carrito:", error)
     return NextResponse.json({ error: "Error al eliminar item del carrito" }, { status: 500 })
