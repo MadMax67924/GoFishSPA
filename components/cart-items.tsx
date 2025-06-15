@@ -82,18 +82,16 @@ export default function CartItems() {
 
       if (!response.ok) throw new Error("Error al actualizar cantidad")
 
-      // Actualizar el estado local inmediatamente
-      setCartItems(cartItems.map((item) => (item.id === itemId ? { ...item, quantity: newQuantity } : item)))
+      // ESPERAR a que la API confirme antes de actualizar
+      await fetchCart()
 
       toast({
         title: "Cantidad actualizada",
         description: "La cantidad del producto ha sido actualizada",
       })
 
-      // Disparar evento para actualizar otros componentes
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent("cartUpdated"))
-      }, 50)
+      // Disparar evento DESPUÉS de actualizar el estado
+      window.dispatchEvent(new CustomEvent("cartUpdated"))
     } catch (error) {
       console.error("Error al actualizar cantidad:", error)
       toast({
@@ -128,18 +126,16 @@ export default function CartItems() {
 
       if (!response.ok) throw new Error("Error al eliminar producto")
 
-      // Actualizar el estado local inmediatamente
-      setCartItems(cartItems.filter((item) => item.id !== itemId))
+      // ESPERAR a que la API confirme antes de actualizar
+      await fetchCart()
 
       toast({
         title: "Producto eliminado",
         description: "El producto ha sido eliminado del carrito",
       })
 
-      // Disparar evento para actualizar otros componentes
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent("cartUpdated"))
-      }, 50)
+      // Disparar evento DESPUÉS de actualizar el estado
+      window.dispatchEvent(new CustomEvent("cartUpdated"))
     } catch (error) {
       console.error("Error al eliminar producto:", error)
       toast({
@@ -167,12 +163,11 @@ export default function CartItems() {
         })
       }
 
-      setCartItems([])
+      // ESPERAR a que todas las operaciones terminen antes de actualizar
+      await fetchCart()
 
-      // Disparar evento para actualizar otros componentes
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent("cartUpdated"))
-      }, 50)
+      // Disparar evento DESPUÉS de actualizar el estado
+      window.dispatchEvent(new CustomEvent("cartUpdated"))
 
       toast({
         title: "Carrito vaciado",

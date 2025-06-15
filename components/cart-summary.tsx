@@ -29,6 +29,7 @@ export default function CartSummary() {
         cache: "no-store",
         headers: {
           "Cache-Control": "no-cache",
+          Pragma: "no-cache",
         },
       })
 
@@ -74,16 +75,12 @@ export default function CartSummary() {
     // Ejecutar inmediatamente
     fetchCartSummary()
 
-    // Escuchar eventos de actualización del carrito
+    // Escuchar eventos de actualización del carrito SIN delay
     const handleCartUpdate = () => {
-      setTimeout(() => {
-        fetchCartSummary()
-      }, 100) // Pequeño delay para asegurar que la API se haya actualizado
+      fetchCartSummary()
     }
 
     window.addEventListener("cartUpdated", handleCartUpdate)
-
-    // También escuchar cuando se añaden productos
     window.addEventListener("productAdded", handleCartUpdate)
 
     return () => {
