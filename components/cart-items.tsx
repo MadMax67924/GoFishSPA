@@ -10,7 +10,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface CartItem {
-  id: number
+  id: string
   product_id: number
   name: string
   price: number
@@ -21,17 +21,15 @@ interface CartItem {
 export default function CartItems() {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [updatingItems, setUpdatingItems] = useState<Set<number>>(new Set())
+  const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set())
   const { toast } = useToast()
-
-  useEffect(() => {
-    fetchCart()
-  }, [])
 
   const fetchCart = async () => {
     setLoading(true)
     try {
-      const response = await fetch("/api/cart")
+      const response = await fetch("/api/cart", {
+        cache: "no-store",
+      })
 
       if (!response.ok) throw new Error("Error al cargar el carrito")
 
@@ -45,8 +43,23 @@ export default function CartItems() {
     }
   }
 
+  useEffect(() => {
+    fetchCart()
+
+    // Escuchar eventos de actualización del carrito
+    const handleCartUpdate = () => {
+      fetchCart()
+    }
+
+    window.addEventListener("cartUpdated", handleCartUpdate)
+
+    return () => {
+      window.removeEventListener("cartUpdated", handleCartUpdate)
+    }
+  }, [])
+
   // CU26: Modificar cantidad en el carrito
-  const updateQuantity = async (itemId: number, newQuantity: number) => {
+  const updateQuantity = async (itemId: string, newQuantity: number) => {
     if (newQuantity < 1) {
       removeItem(itemId)
       return
@@ -68,6 +81,9 @@ export default function CartItems() {
       // Actualizar el estado local inmediatamente
       setCartItems(cartItems.map((item) => (item.id === itemId ? { ...item, quantity: newQuantity } : item)))
 
+      // Disparar evento para actualizar otros componentes
+      window.dispatchEvent(new CustomEvent("cartUpdated"))
+
       toast({
         title: "Cantidad actualizada",
         description: "La cantidad del producto ha sido actualizada",
@@ -88,7 +104,7 @@ export default function CartItems() {
     }
   }
 
-  const handleQuantityInputChange = (itemId: number, value: string) => {
+  const handleQuantityInputChange = (itemId: string, value: string) => {
     const newQuantity = Number.parseInt(value)
     if (!isNaN(newQuantity) && newQuantity >= 1) {
       updateQuantity(itemId, newQuantity)
@@ -96,7 +112,7 @@ export default function CartItems() {
   }
 
   // CU27: Eliminar producto del carrito
-  const removeItem = async (itemId: number) => {
+  const removeItem = async (itemId: string) => {
     setUpdatingItems((prev) => new Set(prev).add(itemId))
 
     try {
@@ -108,6 +124,9 @@ export default function CartItems() {
 
       // Actualizar el estado local inmediatamente
       setCartItems(cartItems.filter((item) => item.id !== itemId))
+
+      // Disparar evento para actualizar otros componentes
+      window.dispatchEvent(new CustomEvent("cartUpdated"))
 
       toast({
         title: "Producto eliminado",
@@ -141,6 +160,10 @@ export default function CartItems() {
       }
 
       setCartItems([])
+
+      // Disparar evento para actualizar otros componentes
+      window.dispatchEvent(new CustomEvent("cartUpdated"))
+
       toast({
         title: "Carrito vaciado",
         description: "Todos los productos han sido eliminados del carrito",

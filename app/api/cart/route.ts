@@ -5,8 +5,8 @@ import { getProductById } from "@/lib/products-data"
 const serverCarts = new Map<string, any[]>()
 
 function getCartId(request: Request): string {
-  const cookies = request.headers.get("cookie") || ""
-  const cartIdMatch = cookies.match(/cartId=([^;]+)/)
+  const cookieHeader = request.headers.get("cookie") || ""
+  const cartIdMatch = cookieHeader.match(/cartId=([^;]+)/)
   return cartIdMatch ? cartIdMatch[1] : `cart_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 }
 
@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     const cartId = getCartId(request)
     const cartItems = serverCarts.get(cartId) || []
 
-    // Enriquecer items con información del producto
+    // Enriquecer items con información del producto actualizada
     const enrichedItems = cartItems.map((item) => {
       const product = getProductById(item.productId)
       return {
@@ -73,6 +73,7 @@ export async function POST(request: Request) {
       secure: process.env.NODE_ENV === "production",
       maxAge: 60 * 60 * 24 * 7, // 1 semana
       path: "/",
+      sameSite: "lax",
     })
 
     return response

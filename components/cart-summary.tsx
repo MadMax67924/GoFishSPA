@@ -23,9 +23,10 @@ export default function CartSummary() {
   const [loading, setLoading] = useState(true)
 
   const fetchCartSummary = async () => {
-    setLoading(true)
     try {
-      const response = await fetch("/api/cart")
+      const response = await fetch("/api/cart", {
+        cache: "no-store",
+      })
 
       if (!response.ok) throw new Error("Error al cargar el resumen del carrito")
 
@@ -37,7 +38,7 @@ export default function CartSummary() {
       const subtotal = items.reduce((acc: number, item: any) => acc + item.price * item.quantity, 0)
 
       // Envío gratis por encima de cierto monto
-      const shipping = subtotal > 30000 ? 0 : 5000
+      const shipping = subtotal > 30000 ? 0 : subtotal > 0 ? 5000 : 0
 
       setSummary({
         subtotal,
@@ -49,8 +50,8 @@ export default function CartSummary() {
       console.error("Error:", error)
       setSummary({
         subtotal: 0,
-        shipping: 5000,
-        total: 5000,
+        shipping: 0,
+        total: 0,
         itemCount: 0,
       })
     } finally {
@@ -74,7 +75,14 @@ export default function CartSummary() {
   }, [])
 
   if (loading) {
-    return <div className="text-center py-12">Cargando resumen...</div>
+    return (
+      <Card>
+        <CardContent className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#005f73]"></div>
+          <span className="ml-2">Cargando resumen...</span>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
