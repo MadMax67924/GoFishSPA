@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation"
-import Image from "next/image"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import AddToCartButton from "@/components/add-to-cart-button"
 import RelatedProducts from "@/components/related-products"
+import ProductImageGallery from "@/components/product-image-gallery"
 import { Suspense } from "react"
 import { getProductById } from "@/lib/products-data"
 
@@ -45,14 +45,9 @@ export default function ProductPage({ params }: ProductPageProps) {
         <div className="container mx-auto px-4">
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
-              <div className="relative h-80 md:h-96">
-                <Image
-                  src={product.image || "/placeholder.svg?height=400&width=400"}
-                  alt={product.name}
-                  fill
-                  className="object-cover rounded-lg"
-                  priority
-                />
+              {/* CU20: Galería de imágenes en alta calidad */}
+              <div className="relative">
+                <ProductImageGallery images={product.images || [product.image]} productName={product.name} />
               </div>
 
               <div className="flex flex-col">
