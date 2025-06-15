@@ -6,6 +6,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ShoppingCart, Eye } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
+import { getRelatedProducts } from "@/lib/products-data"
 
 interface Product {
   id: number
@@ -30,24 +31,9 @@ export default function RelatedProducts({ currentProductId, category }: RelatedP
   useEffect(() => {
     const fetchRelatedProducts = async () => {
       try {
-        // Buscar productos de la misma categoría
-        const response = await fetch(`/api/products?category=${encodeURIComponent(category)}&limit=4`)
-
-        if (!response.ok) {
-          throw new Error("Error al cargar productos relacionados")
-        }
-
-        const data = await response.json()
-
-        if (Array.isArray(data)) {
-          // Filtrar el producto actual y limitar a 3 productos
-          const relatedProducts = data
-            .filter((product: Product) => product.id.toString() !== currentProductId)
-            .slice(0, 3)
-          setProducts(relatedProducts)
-        } else {
-          setProducts([])
-        }
+        // CU49: Mostrar productos relacionados usando datos hardcodeados
+        const relatedProducts = getRelatedProducts(Number.parseInt(currentProductId), category, 4)
+        setProducts(relatedProducts)
       } catch (error) {
         console.error("Error al cargar productos relacionados:", error)
         setProducts([])
@@ -72,9 +58,7 @@ export default function RelatedProducts({ currentProductId, category }: RelatedP
         }),
       })
 
-      if (!response.ok) {
-        throw new Error("Error al añadir al carrito")
-      }
+      if (!response.ok) throw new Error("Error al añadir al carrito")
 
       toast({
         title: "Producto añadido",
@@ -107,7 +91,7 @@ export default function RelatedProducts({ currentProductId, category }: RelatedP
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       {products.map((product) => (
         <div
           key={product.id}
@@ -115,11 +99,11 @@ export default function RelatedProducts({ currentProductId, category }: RelatedP
         >
           <div className="relative h-48">
             <Image
-              src={product.image || "/placeholder.svg?height=200&width=300"}
+              src={product.image || "/placeholder.svg"}
               alt={product.name}
               fill
               className="object-cover"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
             />
             {product.stock <= 10 && product.stock > 0 && (
               <div className="absolute top-2 right-2 bg-orange-500 text-white px-2 py-1 rounded text-xs">
@@ -134,11 +118,7 @@ export default function RelatedProducts({ currentProductId, category }: RelatedP
             <h3 className="text-lg font-semibold text-[#005f73] mb-2 line-clamp-1">{product.name}</h3>
             <div className="text-[#2a9d8f] font-bold text-xl mb-2">${product.price.toLocaleString()}/kg</div>
             <p className="text-gray-600 text-sm mb-3 line-clamp-2">{product.description}</p>
-
-            <div className="text-sm text-gray-500 mb-4">
-              {product.stock > 0 ? `Stock: ${product.stock} kg` : "Sin stock"}
-            </div>
-
+            <div className="text-sm text-gray-500 mb-4">Stock: {product.stock} kg</div>
             <div className="flex gap-2">
               <Button
                 className="flex-1 bg-[#2a9d8f] hover:bg-[#21867a] text-sm"

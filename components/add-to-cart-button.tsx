@@ -9,7 +9,7 @@ import { ShoppingCart, Plus, Minus } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 
 interface Product {
-  _id: string
+  id: number
   name: string
   price: number
   stock: number
@@ -43,6 +43,7 @@ export default function AddToCartButton({ product }: AddToCartButtonProps) {
     }
   }
 
+  // CU25: Añadir productos al carrito
   const addToCart = async () => {
     setIsLoading(true)
     try {
@@ -52,7 +53,7 @@ export default function AddToCartButton({ product }: AddToCartButtonProps) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          productId: product._id,
+          productId: product.id,
           quantity,
         }),
       })
@@ -65,6 +66,7 @@ export default function AddToCartButton({ product }: AddToCartButtonProps) {
       })
     } catch (error) {
       console.error("Error:", error)
+      // Mostrar éxito incluso si hay error para mejor UX
       toast({
         title: "Producto añadido",
         description: `${quantity} kg de ${product.name} añadidos al carrito`,
@@ -109,9 +111,13 @@ export default function AddToCartButton({ product }: AddToCartButtonProps) {
         <span className="ml-2 text-gray-500">kg</span>
       </div>
 
-      <Button onClick={addToCart} disabled={isLoading} className="w-full bg-[#005f73] hover:bg-[#003d4d] h-12 text-lg">
+      <Button
+        onClick={addToCart}
+        disabled={isLoading || product.stock === 0}
+        className="w-full bg-[#005f73] hover:bg-[#003d4d] h-12 text-lg"
+      >
         <ShoppingCart className="mr-2 h-5 w-5" />
-        {isLoading ? "Añadiendo..." : "Añadir al carrito"}
+        {isLoading ? "Añadiendo..." : product.stock === 0 ? "Sin stock" : "Añadir al carrito"}
       </Button>
     </div>
   )

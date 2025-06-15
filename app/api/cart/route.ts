@@ -1,45 +1,34 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { v4 as uuidv4 } from "uuid"
-import { executeQuery } from "@/lib/mysql"
+import { getProductById } from "@/lib/products-data"
 
-export async function GET() {
+// Simulación de carrito en memoria para el servidor
+const serverCarts = new Map<string, any[]>()
+
+function getCartId(request: Request): string {
+  const cookies = request.headers.get("cookie") || ""
+  const cartIdMatch = cookies.match(/cartId=([^;]+)/)
+  return cartIdMatch ? cartIdMatch[1] : `cart_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+}
+
+export async function GET(request: Request) {
   try {
-    const cookieStore = cookies()
-    const cartId = cookieStore.get("cartId")?.value
+    const cartId = getCartId(request)
+    const cartItems = serverCarts.get(cartId) || []
 
-    if (!cartId) {
-      return NextResponse.json({ items: [] })
-    }
+    // Enriquecer items con información del producto
+    const enrichedItems = cartItems.map((item) => {
+      const product = getProductById(item.productId)
+      return {
+        id: item.id,
+        product_id: item.productId,
+        quantity: item.quantity,
+        name: product?.name || "Producto no encontrado",
+        price: product?.price || 0,
+        image: product?.image || "/placeholder.svg",
+      }
+    })
 
-    // Buscar el carrito
-    const cartSql = "SELECT id FROM carts WHERE cart_id = ?"
-    const carts = await executeQuery(cartSql, [cartId])
-
-    if (!Array.isArray(carts) || carts.length === 0) {
-      return NextResponse.json({ items: [] })
-    }
-
-    const cart = carts[0] as any
-
-    // Obtener los items del carrito con información del producto
-    const itemsSql = `
-      SELECT 
-        ci.id,
-        ci.quantity,
-        p.id as product_id,
-        p.name,
-        p.price,
-        p.image
-      FROM cart_items ci
-      JOIN products p ON ci.product_id = p.id
-      WHERE ci.cart_id = ?
-      ORDER BY ci.created_at ASC
-    `
-
-    const items = await executeQuery(itemsSql, [cart.id])
-
-    return NextResponse.json({ items })
+    return NextResponse.json({ items: enrichedItems })
   } catch (error) {
     console.error("Error al obtener carrito:", error)
     return NextResponse.json({ error: "Error al obtener carrito" }, { status: 500 })
@@ -49,52 +38,44 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const { productId, quantity } = await request.json()
-    const cookieStore = cookies()
-    let cartId = cookieStore.get("cartId")?.value
+    const cartId = getCartId(request)
 
-    // Si no hay cartId, crear uno nuevo
-    if (!cartId) {
-      cartId = uuidv4()
-      cookies().set("cartId", cartId, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 60 * 60 * 24 * 7, // 1 semana
-        path: "/",
-      })
+    const cartItems = serverCarts.get(cartId) || []
+
+    // Verificar si el producto existe
+    const product = getProductById(productId)
+    if (!product) {
+      return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 })
     }
 
-    // Buscar o crear el carrito
-    const cartSql = "SELECT id FROM carts WHERE cart_id = ?"
-    const carts = await executeQuery(cartSql, [cartId])
+    // Buscar si el producto ya está en el carrito
+    const existingItemIndex = cartItems.findIndex((item) => item.productId === productId)
 
-    let cartDbId: number
-
-    if (!Array.isArray(carts) || carts.length === 0) {
-      // Crear nuevo carrito
-      const insertCartSql = "INSERT INTO carts (cart_id) VALUES (?)"
-      const result = await executeQuery(insertCartSql, [cartId])
-      cartDbId = (result as any).insertId
-    } else {
-      cartDbId = (carts[0] as any).id
-    }
-
-    // Verificar si el producto ya está en el carrito
-    const existingItemSql = "SELECT id, quantity FROM cart_items WHERE cart_id = ? AND product_id = ?"
-    const existingItems = await executeQuery(existingItemSql, [cartDbId, productId])
-
-    if (Array.isArray(existingItems) && existingItems.length > 0) {
+    if (existingItemIndex >= 0) {
       // Actualizar cantidad
-      const existingItem = existingItems[0] as any
-      const newQuantity = existingItem.quantity + quantity
-      const updateSql = "UPDATE cart_items SET quantity = ? WHERE id = ?"
-      await executeQuery(updateSql, [newQuantity, existingItem.id])
+      cartItems[existingItemIndex].quantity += quantity
     } else {
       // Añadir nuevo item
-      const insertItemSql = "INSERT INTO cart_items (cart_id, product_id, quantity) VALUES (?, ?, ?)"
-      await executeQuery(insertItemSql, [cartDbId, productId, quantity])
+      const newItem = {
+        id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        productId,
+        quantity,
+        addedAt: new Date().toISOString(),
+      }
+      cartItems.push(newItem)
     }
 
-    return NextResponse.json({ success: true })
+    serverCarts.set(cartId, cartItems)
+
+    const response = NextResponse.json({ success: true })
+    response.cookies.set("cartId", cartId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 7, // 1 semana
+      path: "/",
+    })
+
+    return response
   } catch (error) {
     console.error("Error al añadir al carrito:", error)
     return NextResponse.json({ error: "Error al añadir al carrito" }, { status: 500 })
@@ -104,17 +85,22 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const { itemId, quantity } = await request.json()
+    const cartId = getCartId(request)
+
+    let cartItems = serverCarts.get(cartId) || []
 
     if (quantity <= 0) {
-      // Si la cantidad es 0 o menor, eliminar el item
-      const deleteSql = "DELETE FROM cart_items WHERE id = ?"
-      await executeQuery(deleteSql, [itemId])
+      // Eliminar item
+      cartItems = cartItems.filter((item) => item.id !== itemId)
     } else {
       // Actualizar cantidad
-      const updateSql = "UPDATE cart_items SET quantity = ? WHERE id = ?"
-      await executeQuery(updateSql, [quantity, itemId])
+      const itemIndex = cartItems.findIndex((item) => item.id === itemId)
+      if (itemIndex >= 0) {
+        cartItems[itemIndex].quantity = quantity
+      }
     }
 
+    serverCarts.set(cartId, cartItems)
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Error al actualizar carrito:", error)
@@ -126,13 +112,15 @@ export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const itemId = searchParams.get("itemId")
+    const cartId = getCartId(request)
 
     if (!itemId) {
       return NextResponse.json({ error: "ID del item requerido" }, { status: 400 })
     }
 
-    const deleteSql = "DELETE FROM cart_items WHERE id = ?"
-    await executeQuery(deleteSql, [itemId])
+    let cartItems = serverCarts.get(cartId) || []
+    cartItems = cartItems.filter((item) => item.id !== itemId)
+    serverCarts.set(cartId, cartItems)
 
     return NextResponse.json({ success: true })
   } catch (error) {

@@ -1,22 +1,22 @@
 import { notFound } from "next/navigation"
-import Image from "next/image"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import AddToCartButton from "@/components/add-to-cart-button"
 import RelatedProducts from "@/components/related-products"
+import ProductImageGallery from "@/components/product-image-gallery"
 import { Suspense } from "react"
 
 interface ProductPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 async function getProduct(id: string) {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
     const response = await fetch(`${baseUrl}/api/products/${id}`, {
-      cache: "no-store", // Asegurar datos frescos
+      cache: "no-store",
     })
 
     if (!response.ok) {
@@ -35,7 +35,8 @@ async function getProduct(id: string) {
 }
 
 export async function generateMetadata({ params }: ProductPageProps) {
-  const product = await getProduct(params.id)
+  const { id } = await params
+  const product = await getProduct(id)
 
   if (!product) {
     return {
@@ -51,7 +52,8 @@ export async function generateMetadata({ params }: ProductPageProps) {
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
-  const product = await getProduct(params.id)
+  const { id } = await params
+  const product = await getProduct(id)
 
   if (!product) {
     notFound()
@@ -64,14 +66,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <div className="container mx-auto px-4">
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
-              <div className="relative h-80 md:h-96">
-                <Image
-                  src={product.image || "/placeholder.svg?height=400&width=400"}
-                  alt={product.name}
-                  fill
-                  className="object-cover rounded-lg"
-                  priority
-                />
+              {/* CU20: Galería de imágenes en alta calidad */}
+              <div className="relative">
+                <ProductImageGallery images={product.images || [product.image]} productName={product.name} />
               </div>
 
               <div className="flex flex-col">
