@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -8,66 +7,25 @@ import { Input } from "@/components/ui/input"
 import { Trash2, Plus, Minus, ShoppingCart } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-
-interface CartItem {
-  id: number
-  product_id: number
-  name: string
-  price: number
-  image: string
-  quantity: number
-}
+import { useCart } from "@/contexts/cart-context"
+import { useState } from "react"
 
 export default function CartItems() {
-  const [cartItems, setCartItems] = useState<CartItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [updatingItems, setUpdatingItems] = useState<Set<number>>(new Set())
+  const { items, loading, updateQuantity, removeItem, clearCart } = useCart()
+  const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set())
   const { toast } = useToast()
 
-  useEffect(() => {
-    fetchCart()
-  }, [])
-
-  const fetchCart = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch("/api/cart")
-
-      if (!response.ok) throw new Error("Error al cargar el carrito")
-
-      const data = await response.json()
-      setCartItems(data.items || [])
-    } catch (error) {
-      console.error("Error:", error)
-      setCartItems([])
-    } finally {
-      setLoading(false)
-    }
-  }
-
   // CU26: Modificar cantidad en el carrito
-  const updateQuantity = async (itemId: number, newQuantity: number) => {
+  const handleUpdateQuantity = async (itemId: string, newQuantity: number) => {
     if (newQuantity < 1) {
-      removeItem(itemId)
+      handleRemoveItem(itemId)
       return
     }
 
     setUpdatingItems((prev) => new Set(prev).add(itemId))
 
     try {
-      const response = await fetch("/api/cart", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ itemId, quantity: newQuantity }),
-      })
-
-      if (!response.ok) throw new Error("Error al actualizar cantidad")
-
-      // Actualizar el estado local inmediatamente
-      setCartItems(cartItems.map((item) => (item.id === itemId ? { ...item, quantity: newQuantity } : item)))
-
+      await updateQuantity(itemId, newQuantity)
       toast({
         title: "Cantidad actualizada",
         description: "La cantidad del producto ha sido actualizada",
@@ -88,27 +46,19 @@ export default function CartItems() {
     }
   }
 
-  const handleQuantityInputChange = (itemId: number, value: string) => {
+  const handleQuantityInputChange = (itemId: string, value: string) => {
     const newQuantity = Number.parseInt(value)
     if (!isNaN(newQuantity) && newQuantity >= 1) {
-      updateQuantity(itemId, newQuantity)
+      handleUpdateQuantity(itemId, newQuantity)
     }
   }
 
   // CU27: Eliminar producto del carrito
-  const removeItem = async (itemId: number) => {
+  const handleRemoveItem = async (itemId: string) => {
     setUpdatingItems((prev) => new Set(prev).add(itemId))
 
     try {
-      const response = await fetch(`/api/cart?itemId=${itemId}`, {
-        method: "DELETE",
-      })
-
-      if (!response.ok) throw new Error("Error al eliminar producto")
-
-      // Actualizar el estado local inmediatamente
-      setCartItems(cartItems.filter((item) => item.id !== itemId))
-
+      await removeItem(itemId)
       toast({
         title: "Producto eliminado",
         description: "El producto ha sido eliminado del carrito",
@@ -129,18 +79,11 @@ export default function CartItems() {
     }
   }
 
-  const clearCart = async () => {
+  const handleClearCart = async () => {
     if (!confirm("¿Estás seguro de que quieres vaciar el carrito?")) return
 
     try {
-      // Eliminar todos los items uno por uno
-      for (const item of cartItems) {
-        await fetch(`/api/cart?itemId=${item.id}`, {
-          method: "DELETE",
-        })
-      }
-
-      setCartItems([])
+      await clearCart()
       toast({
         title: "Carrito vaciado",
         description: "Todos los productos han sido eliminados del carrito",
@@ -166,7 +109,7 @@ export default function CartItems() {
     )
   }
 
-  if (cartItems.length === 0) {
+  if (items.length === 0) {
     return (
       <Card>
         <CardContent className="text-center py-12">
@@ -184,11 +127,11 @@ export default function CartItems() {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Productos en tu carrito ({cartItems.length})</CardTitle>
+        <CardTitle>Productos en tu carrito ({items.length})</CardTitle>
         <Button
           variant="outline"
           size="sm"
-          onClick={clearCart}
+          onClick={handleClearCart}
           className="text-red-600 hover:text-red-700 hover:bg-red-50"
         >
           Vaciar carrito
@@ -196,7 +139,7 @@ export default function CartItems() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {cartItems.map((item) => (
+          {items.map((item) => (
             <div key={item.id} className="flex items-center gap-4 p-4 border rounded-lg">
               {/* Imagen del producto */}
               <div className="relative h-16 w-16 flex-shrink-0">
@@ -220,7 +163,7 @@ export default function CartItems() {
                   type="button"
                   variant="outline"
                   size="icon"
-                  onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                  onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
                   disabled={item.quantity <= 1 || updatingItems.has(item.id)}
                   className="h-8 w-8"
                 >
@@ -240,7 +183,7 @@ export default function CartItems() {
                   type="button"
                   variant="outline"
                   size="icon"
-                  onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                  onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
                   disabled={updatingItems.has(item.id)}
                   className="h-8 w-8"
                 >
@@ -259,7 +202,7 @@ export default function CartItems() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => removeItem(item.id)}
+                onClick={() => handleRemoveItem(item.id)}
                 disabled={updatingItems.has(item.id)}
                 className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8"
                 title="Eliminar producto"
