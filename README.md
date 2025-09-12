@@ -18,7 +18,7 @@ Aplicación web para la distribuidora de productos marinos GoFish SpA. Permite a
 ### Instalación
 
 1. Clona el repositorio
-2. Instala las dependencias: `npm install`
+2. Instala las dependencias: `npm install --prefix frontend`
 3. Configura las variables de entorno
 4. Ejecuta el script de configuración: `node scripts/setup-mysql.js`
 5. Inicia el servidor de desarrollo: `npm run dev`
