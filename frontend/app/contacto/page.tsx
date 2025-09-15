@@ -1,6 +1,6 @@
-import Header from "@/components/header"
-import Footer from "@/components/footer"
-import ContactFormPage from "@/components/contact-form-page"
+import Header from "@/components/layout/header";
+import Footer from "@/components/layout/footer";
+import ContactFormPage from "@/components/forms/contact-form-page"
 import { Card, CardContent } from "@/components/ui/card"
 import { MapPin, Phone, Mail, Clock } from "lucide-react"
 

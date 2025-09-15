@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation"
-import Header from "@/components/header"
-import Footer from "@/components/footer"
-import AddToCartButton from "@/components/add-to-cart-button"
-import RelatedProducts from "@/components/related-products"
-import ProductImageGallery from "@/components/product-image-gallery"
+import Header from "@/components/layout/header";
+import Footer from "@/components/layout/footer";
+import AddToCartButton from "@/components/cart/add-to-cart-button"
+import RelatedProducts from "@/components/product/related-products"
+import ProductImageGallery from "@/components/product/product-image-gallery"
 import { Suspense } from "react"
-import { getProductById } from "@/lib/products-data"
+import { getProductById } from "@/lib/server/products-data"
 
 interface ProductPageProps {
   params: {
@@ -79,7 +79,8 @@ export default function ProductPage({ params }: ProductPageProps) {
                 </div>
 
                 <div className="mt-auto">
-                  <AddToCartButton product={product} />
+                  <AddToCartButton productId={product.id.toString()} />
+
                 </div>
               </div>
             </div>

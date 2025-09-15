@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Menu, ShoppingCart, User, Search } from "lucide-react"
 import LoginModal from "./login-modal"
-import CartIndicator from "./cart-indicator"
+import CartIndicator from "@/components/cart/cart-indicator"
 
 export default function Header() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)

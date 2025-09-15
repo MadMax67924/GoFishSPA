@@ -1,6 +1,6 @@
 import { cookies } from "next/headers"
 import { jwtVerify } from "jose"
-import { executeQuery } from "./mysql"
+import { executeQuery } from "../mysql"
 
 export async function getSession() {
   try {

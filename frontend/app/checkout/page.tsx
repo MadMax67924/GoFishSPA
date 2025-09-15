@@ -1,7 +1,8 @@
-import Header from "@/components/header"
-import Footer from "@/components/footer"
-import CheckoutForm from "@/components/checkout-form"
-import CheckoutSummary from "@/components/checkout-summary"
+import Header from "@/components/layout/header";
+import Footer from "@/components/layout/footer";
+import CheckoutForm from "@/components/checkout/checkout-form";
+import CheckoutSummary from "@/components/checkout/checkout-summary";
+
 import { Suspense } from "react"
 
 export const metadata = {

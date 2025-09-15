@@ -69,7 +69,7 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({ productId, quantity =
       disabled={isLoading}
       className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
     >
-      {isLoading ? "Adding..." : "Add to Cart"}
+      {isLoading ? "Añadiendo al carro..." : "Añadir al carrito"}
     </button>
   )
 }

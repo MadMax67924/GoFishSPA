@@ -6,7 +6,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ShoppingCart, Eye } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
-import { getRelatedProducts } from "@/lib/products-data"
+import { getRelatedProducts } from "@/lib/server/products-data"
 
 interface Product {
   id: number

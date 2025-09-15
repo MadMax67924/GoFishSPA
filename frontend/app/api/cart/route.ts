@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getProductById } from "@/lib/products-data"
+import { getProductById } from "@/lib/server/products-data"
 
 // Simulación de carrito en memoria para el servidor - COMPARTIDA
 export const serverCarts = new Map<string, any[]>()

@@ -1,7 +1,7 @@
-import Header from "@/components/header"
-import Footer from "@/components/footer"
-import ProductList from "@/components/product-list"
-import ProductFilters from "@/components/product-filters"
+import Header from "@/components/layout/header";
+import Footer from "@/components/layout/footer";
+import ProductList from "@/components/product/product-list"
+import ProductFilters from "@/components/product/product-filters"
 import { Suspense } from "react"
 
 export const metadata = {

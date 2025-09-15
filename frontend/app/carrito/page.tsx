@@ -1,7 +1,7 @@
-import Header from "@/components/header"
-import Footer from "@/components/footer"
-import CartItems from "@/components/cart-items"
-import CartSummary from "@/components/cart-summary"
+import Header from "@/components/layout/header";
+import Footer from "@/components/layout/footer";
+import CartItems from "@/components/cart/cart-items"
+import CartSummary from "@/components/cart/cart-summary"
 import { Suspense } from "react"
 
 export const metadata = {

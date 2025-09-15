@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { getAllProducts } from "@/lib/products-data"
+import { getAllProducts } from "@/lib/server/products-data"
 
 export default function TestProductsPage() {
   const products = getAllProducts()
