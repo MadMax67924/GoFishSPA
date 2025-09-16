@@ -1,3 +1,4 @@
+"use client"
 import { notFound } from "next/navigation"
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
@@ -7,32 +8,37 @@ import ProductImageGallery from "@/components/product/product-image-gallery"
 import { Suspense } from "react"
 import { getProductById } from "@/lib/server/products-data"
 
+// IMPORTA LOS COMPONENTES DE RESEÑAS
+import ReviewForm from "@/components/reviews/review-form"
+import ReviewList from "@/components/reviews/review-list"
+import { useEffect, useState } from "react"
+
 interface ProductPageProps {
   params: {
     id: string
   }
 }
 
-export async function generateMetadata({ params }: ProductPageProps) {
-  const productId = Number.parseInt(params.id)
-  const product = getProductById(productId)
 
-  if (!product) {
-    return {
-      title: "Producto no encontrado | GoFish SpA",
-      description: "El producto que buscas no existe o ha sido eliminado.",
-    }
-  }
-
-  return {
-    title: `${product.name} | GoFish SpA`,
-    description: product.description,
-  }
-}
 
 export default function ProductPage({ params }: ProductPageProps) {
   const productId = Number.parseInt(params.id)
   const product = getProductById(productId)
+
+  // --- INICIO: LÓGICA DE RESEÑAS ---
+  const [reviews, setReviews] = useState<any[]>([])
+
+  const fetchReviews = async () => {
+    const res = await fetch(`/api/reviews?productId=${productId}`)
+    const data = await res.json()
+    setReviews(data)
+  }
+
+  useEffect(() => {
+    fetchReviews()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  // --- FIN: LÓGICA DE RESEÑAS ---
 
   if (!product) {
     notFound()
@@ -80,11 +86,18 @@ export default function ProductPage({ params }: ProductPageProps) {
 
                 <div className="mt-auto">
                   <AddToCartButton productId={product.id.toString()} />
-
                 </div>
               </div>
             </div>
           </div>
+
+          {/* --- SECCIÓN DE RESEÑAS --- */}
+          <div className="mt-12">
+            <h2 className="text-2xl font-bold mb-6">Reseñas del producto</h2>
+            <ReviewForm productId={product.id.toString()} onNewReview={fetchReviews} />
+            <ReviewList reviews={reviews} />
+          </div>
+          {/* --- FIN SECCIÓN DE RESEÑAS --- */}
 
           <div className="mt-12">
             <h2 className="text-2xl font-bold mb-6">Productos relacionados</h2>
