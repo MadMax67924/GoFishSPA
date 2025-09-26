@@ -8,9 +8,10 @@ import { useRouter } from "next/navigation"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Menu, ShoppingCart, User, Search } from "lucide-react"
+import { Menu, ShoppingCart, User, Search, Heart } from "lucide-react"
 import LoginModal from "./login-modal"
 import CartIndicator from "@/components/cart/cart-indicator"
+import WishlistIndicator from "@/components/product/wishlist-indicator"
 
 export default function Header() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
@@ -72,6 +73,12 @@ export default function Header() {
                 <User className="h-5 w-5 mr-2" />
                 Iniciar Sesión
               </Button>
+              <Link href="/lista-deseados">
+                <Button variant="ghost" className="hover:text-[#e9c46a] transition-colors relative">
+                  <Heart className="h-5 w-5" />
+                  <WishlistIndicator />
+                </Button>
+              </Link>
               <Link href="/carrito">
                 <Button variant="ghost" className="hover:text-[#e9c46a] transition-colors relative">
                   <ShoppingCart className="h-5 w-5" />
@@ -124,6 +131,14 @@ export default function Header() {
                   >
                     Iniciar Sesión
                   </Button>
+                  <Link
+                    href="/lista-deseados"
+                    className="text-lg hover:text-[#e9c46a] transition-colors relative inline-block"
+                  >
+                    <Heart className="h-5 w-5 inline mr-2" />
+                    Lista de Deseos
+                    <WishlistIndicator />
+                  </Link>
                   <Link
                     href="/carrito"
                     className="text-lg hover:text-[#e9c46a] transition-colors relative inline-block"

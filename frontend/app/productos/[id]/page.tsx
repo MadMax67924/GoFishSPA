@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import AddToCartButton from "@/components/cart/add-to-cart-button"
+import AddToWishlistButton from "@/components/product/add-to-wishlist-button"
 import RelatedProducts from "@/components/product/related-products"
 import ProductImageGallery from "@/components/product/product-image-gallery"
 import { Suspense } from "react"
@@ -84,8 +85,9 @@ export default function ProductPage({ params }: ProductPageProps) {
                   </div>
                 </div>
 
-                <div className="mt-auto">
+                <div className="mt-auto space-y-3">
                   <AddToCartButton productId={product.id.toString()} />
+                  <AddToWishlistButton product={product} />
                 </div>
               </div>
             </div>

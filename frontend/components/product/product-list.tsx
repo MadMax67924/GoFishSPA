@@ -5,8 +5,9 @@ import { useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ShoppingCart, Eye, RefreshCw } from "lucide-react"
+import { ShoppingCart, Eye, RefreshCw, Heart } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
+import { useWishlist } from "@/contexts/wishlist-context"
 
 interface Product {
   id: number
