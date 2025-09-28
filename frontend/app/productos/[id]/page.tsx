@@ -12,6 +12,7 @@ import { getProductById } from "@/lib/server/products-data"
 // IMPORTA LOS COMPONENTES DE RESEÑAS
 import ReviewForm from "@/components/reviews/review-form"
 import ReviewList from "@/components/reviews/review-list"
+import ReviewsSection from "@/components/reviews/reviews-section"
 import { useEffect, useState } from "react"
 
 interface ProductPageProps {
