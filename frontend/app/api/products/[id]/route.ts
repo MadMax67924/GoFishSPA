@@ -62,3 +62,13 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     return NextResponse.json({ error: "Error al eliminar producto" }, { status: 500 })
   }
 }
+fetch('/api/cart', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    productId: 1,
+    quantity: 1
+  })
+})
