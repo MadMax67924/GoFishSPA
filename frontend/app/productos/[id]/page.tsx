@@ -31,7 +31,7 @@ export default function ProductPage({ params }: ProductPageProps) {
   const [reviews, setReviews] = useState<any[]>([])
 
   const fetchReviews = async () => {
-    const res = await fetch(`/api/reviews?productId=${productId}`)
+    const res = await fetch(`/api/reviews/upload?productId=${productId}`)
     const data = await res.json()
     setReviews(data)
   }

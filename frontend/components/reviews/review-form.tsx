@@ -6,7 +6,8 @@ export default function ReviewForm({ productId, onNewReview }: { productId: stri
   const [imagen, setImagen] = useState<File | null>(null)
   const [subiendo, setSubiendo] = useState(false)
   const [error, setError] = useState("")
-
+  //Si se ingresa una imagen esta es mandada por post a reviews para que se guarde en los archivos locales retornando su url
+  //Despues de eso ingresa todos los datos necesarios como POST a upload para ser ingresados a la base de datos
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubiendo(true)

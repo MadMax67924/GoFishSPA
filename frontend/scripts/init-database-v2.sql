@@ -124,6 +124,17 @@ CREATE TABLE IF NOT EXISTS contacts (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+-- Tabla de resenas, 
+-- no esta implementada aun la FOREIGN KEY debido a la falta de implementacion de base de datos en productos
+CREATE TABLE reviews (
+	id VARCHAR(255) NOT NULL,
+	productId VARCHAR(255) NOT NULL,
+	texto VARCHAR(255) NOT NULL,
+	imagen VARCHAR(255) NULL,
+	fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	aprovado BOOLEAN DEFAULT FALSE
+);
+
 -- Índices adicionales para mejorar el rendimiento
 CREATE INDEX idx_products_category ON products(category);
 CREATE INDEX idx_products_featured ON products(featured);
