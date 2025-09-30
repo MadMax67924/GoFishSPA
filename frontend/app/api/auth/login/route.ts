@@ -76,7 +76,6 @@ export async function POST(request: Request) {
 
     // Verificar contraseña
     const isPasswordValid = await bcrypt.compare(password, user.password)
-
     if (!isPasswordValid) {
       // Incrementar intentos fallidos
       const newFailedAttempts = (user.failed_login_attempts || 0) + 1
@@ -128,16 +127,15 @@ export async function POST(request: Request) {
 
     // Generar token JWT
     const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: "7d" })
-
     // Establecer cookie con el token
-    cookies().set("authToken", token, {
+    const cookieStore = await cookies();
+    cookieStore.set("authToken", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: 60 * 60 * 24 * 7, // 7 días
       path: "/",
       sameSite: "lax",
     })
-
     return NextResponse.json({
       success: true,
       user: {

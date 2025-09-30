@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label"
 import { useToast } from "@/components/ui/use-toast"
 import { Eye, EyeOff, AlertTriangle, Mail } from "lucide-react"
 
+
+
 interface LoginModalProps {
   isOpen: boolean
   onClose: () => void
@@ -68,6 +70,9 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         })
         onClose()
         router.refresh()
+        if(data.user.email == "admin@gofish.cl") {
+          router.push('/pagina-admin')
+        }
       } else {
         // Caso 6: Mostrar Error al Usuario en Login Fallido
         if (data.field) {
