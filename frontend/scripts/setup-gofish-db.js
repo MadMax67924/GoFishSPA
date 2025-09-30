@@ -30,7 +30,45 @@ async function setupDatabase() {
 
     console.log(" Tablas existentes:", existingTables.length > 0 ? existingTables : "ninguna")
 
-    // Crear tabla de productos si no existe
+    // Crear tabla de usuarios actualizada con nuevas columnas de seguridad
+    if (!existingTables.includes("users")) {
+      console.log(" Creando tabla users...")
+      await connection.execute(`
+        CREATE TABLE users (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          email VARCHAR(255) UNIQUE NOT NULL,
+          password VARCHAR(255) NOT NULL,
+          role ENUM('user', 'admin') DEFAULT 'user',
+          
+          -- Campos para verificación de email
+          email_verified BOOLEAN DEFAULT FALSE,
+          verification_token VARCHAR(64) NULL,
+          verification_token_expires DATETIME NULL,
+          
+          -- Campos para recuperación de contraseña
+          password_reset_token VARCHAR(64) NULL,
+          password_reset_expires DATETIME NULL,
+          
+          -- Campos para seguridad de cuenta
+          failed_login_attempts INT DEFAULT 0,
+          account_locked_until DATETIME NULL,
+          last_login_attempt DATETIME NULL,
+          
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          
+          -- Índices para mejorar rendimiento
+          INDEX idx_email (email),
+          INDEX idx_verification_token (verification_token),
+          INDEX idx_password_reset_token (password_reset_token),
+          INDEX idx_account_locked (account_locked_until)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+      console.log(" Tabla users creada")
+    }
+
+    // Crear tabla de productos
     if (!existingTables.includes("products")) {
       console.log(" Creando tabla products...")
       await connection.execute(`
@@ -38,63 +76,35 @@ async function setupDatabase() {
           id INT AUTO_INCREMENT PRIMARY KEY,
           name VARCHAR(255) NOT NULL,
           description TEXT,
-          price DECIMAL(10,2) NOT NULL,
+          price DECIMAL(10, 2) NOT NULL,
           image VARCHAR(500),
-          category VARCHAR(100) NOT NULL,
+          category ENUM('pescados', 'mariscos') NOT NULL,
           stock INT DEFAULT 0,
           featured BOOLEAN DEFAULT FALSE,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          INDEX idx_category (category),
-          INDEX idx_featured (featured),
-          INDEX idx_name (name)
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `)
       console.log(" Tabla products creada")
     }
 
-    // Crear tabla de usuarios si no existe
-    if (!existingTables.includes("users")) {
-      console.log(" Creando tabla users...")
-      await connection.execute(`
-        CREATE TABLE users (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          email VARCHAR(255) UNIQUE NOT NULL,
-          password VARCHAR(255) NOT NULL,
-          name VARCHAR(255) NOT NULL,
-          role ENUM('admin', 'customer') DEFAULT 'customer',
-          email_verified BOOLEAN DEFAULT FALSE,
-          verification_token VARCHAR(255),
-          reset_token VARCHAR(255),
-          reset_token_expires DATETIME,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          INDEX idx_email (email),
-          INDEX idx_role (role)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-      `)
-      console.log(" Tabla users creada")
-    }
-
-    // Crear tabla de carritos si no existe
+    // Crear tabla de carritos
     if (!existingTables.includes("carts")) {
       console.log(" Creando tabla carts...")
       await connection.execute(`
         CREATE TABLE carts (
           id INT AUTO_INCREMENT PRIMARY KEY,
-          session_id VARCHAR(255) NOT NULL,
+          cart_id VARCHAR(255) UNIQUE NOT NULL,
           user_id INT NULL,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-          INDEX idx_session (session_id),
-          INDEX idx_user (user_id)
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `)
       console.log(" Tabla carts creada")
     }
 
-    // Crear tabla de items del carrito si no existe
+    // Crear tabla de items del carrito
     if (!existingTables.includes("cart_items")) {
       console.log(" Creando tabla cart_items...")
       await connection.execute(`
@@ -110,10 +120,10 @@ async function setupDatabase() {
           UNIQUE KEY unique_cart_product (cart_id, product_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `)
-      console.log("Tabla cart_items creada")
+      console.log(" Tabla cart_items creada")
     }
 
-    // Crear tabla de órdenes si no existe
+    // Crear tabla de pedidos
     if (!existingTables.includes("orders")) {
       console.log(" Creando tabla orders...")
       await connection.execute(`
@@ -121,26 +131,29 @@ async function setupDatabase() {
           id INT AUTO_INCREMENT PRIMARY KEY,
           order_number VARCHAR(50) UNIQUE NOT NULL,
           user_id INT NULL,
-          customer_name VARCHAR(255) NOT NULL,
-          customer_email VARCHAR(255) NOT NULL,
-          customer_phone VARCHAR(50),
-          shipping_address TEXT,
-          total DECIMAL(10,2) NOT NULL,
-          status ENUM('pending', 'processing', 'shipped', 'delivered', 'cancelled') DEFAULT 'pending',
-          payment_method VARCHAR(50),
+          first_name VARCHAR(255) NOT NULL,
+          last_name VARCHAR(255) NOT NULL,
+          email VARCHAR(255) NOT NULL,
+          phone VARCHAR(50) NOT NULL,
+          address TEXT NOT NULL,
+          city VARCHAR(255) NOT NULL,
+          region VARCHAR(255) NOT NULL,
+          postal_code VARCHAR(20) NOT NULL,
+          payment_method ENUM('transferencia', 'webpay', 'efectivo') NOT NULL,
           notes TEXT,
+          subtotal DECIMAL(10, 2) NOT NULL,
+          shipping DECIMAL(10, 2) NOT NULL DEFAULT 0,
+          total DECIMAL(10, 2) NOT NULL,
+          status ENUM('pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled') DEFAULT 'pending',
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
-          INDEX idx_status (status),
-          INDEX idx_order_number (order_number),
-          INDEX idx_created_at (created_at)
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `)
       console.log(" Tabla orders creada")
     }
 
-    // Crear tabla de items de órdenes si no existe
+    // Crear tabla de items de pedidos
     if (!existingTables.includes("order_items")) {
       console.log(" Creando tabla order_items...")
       await connection.execute(`
@@ -149,15 +162,63 @@ async function setupDatabase() {
           order_id INT NOT NULL,
           product_id INT NOT NULL,
           product_name VARCHAR(255) NOT NULL,
-          product_price DECIMAL(10,2) NOT NULL,
+          product_price DECIMAL(10, 2) NOT NULL,
           quantity INT NOT NULL,
-          subtotal DECIMAL(10,2) NOT NULL,
+          subtotal DECIMAL(10, 2) NOT NULL,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
           FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `)
       console.log(" Tabla order_items creada")
+    }
+
+    // Crear tabla de contactos
+    if (!existingTables.includes("contacts")) {
+      console.log(" Creando tabla contacts...")
+      await connection.execute(`
+        CREATE TABLE contacts (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          email VARCHAR(255) NOT NULL,
+          message TEXT NOT NULL,
+          status ENUM('new', 'read', 'replied') DEFAULT 'new',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+      console.log(" Tabla contacts creada")
+    }
+
+    // Crear tabla de reseñas
+    if (!existingTables.includes("reviews")) {
+      console.log(" Creando tabla reviews...")
+      await connection.execute(`
+        CREATE TABLE reviews (
+          id VARCHAR(255) NOT NULL,
+          productId VARCHAR(255) NOT NULL,
+          texto VARCHAR(255) NOT NULL,
+          imagen VARCHAR(255) NULL,
+          fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          aprovado BOOLEAN DEFAULT FALSE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+      console.log(" Tabla reviews creada")
+    }
+
+    // Crear índices adicionales para mejorar el rendimiento
+    console.log(" Creando índices adicionales...")
+    try {
+      await connection.execute("CREATE INDEX IF NOT EXISTS idx_products_category ON products(category)")
+      await connection.execute("CREATE INDEX IF NOT EXISTS idx_products_featured ON products(featured)")
+      await connection.execute("CREATE INDEX IF NOT EXISTS idx_products_price ON products(price)")
+      await connection.execute("CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)")
+      await connection.execute("CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at)")
+      await connection.execute("CREATE INDEX IF NOT EXISTS idx_cart_items_cart_id ON cart_items(cart_id)")
+      await connection.execute("CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id)")
+      console.log(" Índices creados correctamente")
+    } catch (error) {
+      console.log(" Los índices ya existen o hubo un error al crearlos:", error.message)
     }
 
     // Verificar si ya hay productos
@@ -170,73 +231,73 @@ async function setupDatabase() {
         [
           "Salmón Fresco",
           "Salmón fresco del día, ideal para preparaciones crudas como sushi o ceviches. Producto de primera calidad capturado de forma sostenible.",
-          8990,
-          "/placeholder.svg?height=300&width=400",
+          8990.00,
+          "/images/salmon.jpg",
           "pescados",
           50,
           true,
         ],
         [
-          "Atún Rojo",
-          "Atún rojo de primera calidad, perfecto para sashimi y preparaciones gourmet. Capturado de forma sostenible en aguas del Pacífico.",
-          12990,
-          "/placeholder.svg?height=300&width=400",
+          "Merluza Austral",
+          "Merluza austral de aguas profundas, perfecta para frituras y guisos. Pescado blanco de sabor suave y textura firme.",
+          5990.00,
+          "/images/merluza.jpg",
           "pescados",
-          25,
+          40,
           true,
         ],
         [
-          "Merluza Austral",
-          "Merluza austral de aguas profundas, perfecta para frituras y guisos. Pescado blanco de sabor suave y textura firme.",
-          5990,
-          "/placeholder.svg?height=300&width=400",
+          "Reineta",
+          "Reineta fresca, pescado blanco de sabor suave ideal para hornear.",
+          6490.00,
+          "/images/reineta.jpg",
           "pescados",
-          40,
-          false,
+          35,
+          true,
         ],
         [
-          "Camarones Ecuatorianos",
-          "Camarones ecuatorianos de cultivo, perfectos para cócteles y paellas. Tamaño jumbo, frescos y de excelente calidad.",
-          15990,
-          "/placeholder.svg?height=300&width=400",
+          "Camarones",
+          "Camarones ecuatorianos de cultivo, perfectos para cócteles y paellas.",
+          12990.00,
+          "/images/camarones.jpg",
           "mariscos",
           30,
           true,
         ],
         [
-          "Pulpo Español",
-          "Pulpo español cocido, listo para ensaladas y tapas. Textura tierna y sabor intenso del Mediterráneo.",
-          18990,
-          "/placeholder.svg?height=300&width=400",
+          "Congrio",
+          "Congrio dorado, ideal para caldillo y frituras.",
+          9990.00,
+          "/images/congrio.jpg",
+          "pescados",
+          25,
+          false,
+        ],
+        [
+          "Choritos",
+          "Choritos frescos de la zona, perfectos para preparar a la marinera.",
+          4990.00,
+          "/images/choritos.jpg",
+          "mariscos",
+          60,
+          false,
+        ],
+        [
+          "Pulpo",
+          "Pulpo fresco, ideal para ensaladas y preparaciones a la parrilla.",
+          15990.00,
+          "/images/pulpo.jpg",
           "mariscos",
           15,
           false,
         ],
         [
-          "Reineta Nacional",
-          "Reineta fresca nacional, pescado blanco de sabor suave ideal para hornear. Producto local de excelente calidad.",
-          6490,
-          "/placeholder.svg?height=300&width=400",
+          "Atún",
+          "Atún fresco, perfecto para tataki y preparaciones a la plancha.",
+          11990.00,
+          "/images/atun.jpg",
           "pescados",
-          35,
-          false,
-        ],
-        [
-          "Langostinos Jumbo",
-          "Langostinos frescos de gran tamaño, perfectos para parrilla y preparaciones especiales. Sabor dulce y textura firme.",
-          22990,
-          "/placeholder.svg?height=300&width=400",
-          "mariscos",
           20,
-          true,
-        ],
-        [
-          "Corvina Dorada",
-          "Corvina fresca, pescado de carne firme y sabor delicado. Ideal para ceviches, frituras y preparaciones al horno.",
-          7990,
-          "/placeholder.svg?height=300&width=400",
-          "pescados",
-          45,
           false,
         ],
       ]
@@ -250,7 +311,7 @@ async function setupDatabase() {
 
       console.log(" Productos insertados correctamente")
     } else {
-      console.log(`ℹ Ya existen ${productCount[0].count} productos en la base de datos`)
+      console.log(` Ya existen ${productCount[0].count} productos en la base de datos`)
     }
 
     // Verificar si ya hay usuarios admin
@@ -263,11 +324,11 @@ async function setupDatabase() {
       const hashedPassword = await bcrypt.hash("admin123", 10)
 
       await connection.execute(
-        "INSERT INTO users (email, password, name, role, email_verified) VALUES (?, ?, ?, ?, ?)",
-        ["admin@gofish.cl", hashedPassword, "Administrador GoFish", "admin", true],
+        "INSERT INTO users (name, email, password, role, email_verified) VALUES (?, ?, ?, ?, ?)",
+        ["Administrador GoFish", "admin@gofish.cl", hashedPassword, "admin", true],
       )
 
-      console.log("Usuario administrador creado")
+      console.log(" Usuario administrador creado")
       console.log(" Email: admin@gofish.cl")
       console.log(" Password: admin123")
     } else {
@@ -311,7 +372,7 @@ async function setupDatabase() {
   } finally {
     if (connection) {
       await connection.end()
-      console.log("🔌 Conexión cerrada")
+      console.log(" Conexión cerrada")
     }
   }
 }

@@ -157,6 +157,6 @@ INSERT IGNORE INTO products (name, description, price, image, category, stock, f
 
 -- Insertar usuario administrador de ejemplo (contraseña: admin123)
 INSERT IGNORE INTO users (name, email, password, role, email_verified) VALUES
-('Administrador GoFish', 'admin@gofish.cl', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', TRUE);
+('Administrador GoFish', 'admin@gofish.cl', '$2b$12$oY8XRaFPgaAroDCsM.YBbet.NMVS6CzyQIA6hitFYWMR7.riMZ35S', 'admin', TRUE);
 
 COMMIT;
