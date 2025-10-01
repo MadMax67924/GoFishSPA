@@ -23,7 +23,7 @@ export default function AdminReview() {
     const handleSuccess = async (id: string) => {
         const state = 1
         
-        const reviewRes = await fetch("/api/revisar-admin/upload", {
+        const reviewRes = await fetch("/api/revisar-admin", {
         method: "POST",
         body: JSON.stringify({ id, state }),
         headers: { "Content-Type": "application/json" },
@@ -37,7 +37,7 @@ export default function AdminReview() {
     }
     const handleFailure = async (id: string) => {
         const state  = 0
-        const reviewRes = await fetch("/api/revisar-admin/upload", {
+        const reviewRes = await fetch("/api/revisar-admin", {
         method: "POST",
         body: JSON.stringify({ id, state  }),
         headers: { "Content-Type": "application/json" },
