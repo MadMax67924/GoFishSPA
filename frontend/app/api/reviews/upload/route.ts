@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     //Consulta a la base de datos mediante query para exrtraer los datos necesarios en el formato necesario
     //Se extraen solo cuando sean iguales al product id del producto actual y si han sido aprovados
     const reviews = await executeQuery(
-      `SELECT id, productId, texto, imagen, DATE_FORMAT(fecha, '%Y-%m-%d') as fecha, aprovado 
+      `SELECT id, productId, texto, imagen, DATE_FORMAT(fecha, '%Y-%m-%d') as fecha, aprovado, rating 
        FROM reviews 
        WHERE productId = ? AND aprovado = true
        ORDER BY fecha DESC`,
@@ -38,15 +38,16 @@ export async function GET(req: NextRequest) {
 
 //Ingresa los datos de la nueva resena a la base de datos
 export async function POST(req: NextRequest) {
-  const { productId, texto, imagen } = await req.json()
+  const { productId, texto, imagen, rating } = await req.json()
   const id = `review_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   const orderSql = `
         INSERT INTO reviews (
           id,
           productId,
           texto,
-          imagen
-        ) VALUES (?, ?, ?, ?)
+          imagen,
+          rating
+        ) VALUES (?, ?, ?, ?,?)
       `
   
   await executeQuery(orderSql, [
@@ -54,11 +55,13 @@ export async function POST(req: NextRequest) {
     productId,
     texto,
     imagen,
+    rating,
       ])
   return NextResponse.json({
     id,
     productId,
     texto,
-    imagen
+    imagen,
+    rating
   })
 }

@@ -200,7 +200,8 @@ async function setupDatabase() {
           texto VARCHAR(255) NOT NULL,
           imagen VARCHAR(255) NULL,
           fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          aprovado BOOLEAN DEFAULT FALSE
+          aprovado BOOLEAN DEFAULT FALSE,
+          rating INT NOT NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `)
       console.log(" Tabla reviews creada")
