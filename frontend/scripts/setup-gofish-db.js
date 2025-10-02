@@ -207,6 +207,20 @@ async function setupDatabase() {
       console.log(" Tabla reviews creada")
     }
 
+    // Crear tabla de sugerencias
+    if (!existingTables.includes("sugerencias")) {
+      console.log(" Creando tabla sugerencias...")
+      await connection.execute(`
+        CREATE TABLE sugerencias (
+          id VARCHAR(255) PRIMARY KEY,
+          texto VARCHAR(255) NOT NULL,
+          imagen VARCHAR(255) NULL,
+          fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+      console.log(" Tabla sugerencias creada")
+    }
+
     // Crear índices adicionales para mejorar el rendimiento
     console.log(" Creando índices adicionales...")
     try {
@@ -217,6 +231,7 @@ async function setupDatabase() {
       await connection.execute("CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at)")
       await connection.execute("CREATE INDEX IF NOT EXISTS idx_cart_items_cart_id ON cart_items(cart_id)")
       await connection.execute("CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id)")
+      await connection.execute("CREATE INDEX IF NOT EXISTS idx_sugerencias_fecha ON sugerencias(fecha)")
       console.log(" Índices creados correctamente")
     } catch (error) {
       console.log(" Los índices ya existen o hubo un error al crearlos:", error.message)
