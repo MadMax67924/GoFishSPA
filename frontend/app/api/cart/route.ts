@@ -30,6 +30,7 @@ export async function GET(request: Request) {
           name: product.name,
           price: product.price,
           image: product.image,
+          isPreOrder: item.isPreOrder || false // ← NUEVO: Incluir flag de pre-orden
         }
       })
       .filter(Boolean) // Remover items null
@@ -43,7 +44,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { productId, quantity } = await request.json()
+    const { productId, quantity, isPreOrder } = await request.json() // ← NUEVO: Recibir isPreOrder
     const cartId = getCartId(request)
 
     const cartItems = serverCarts.get(cartId) || []
@@ -55,10 +56,12 @@ export async function POST(request: Request) {
     }
 
     // Buscar si el producto ya está en el carrito
-    const existingItemIndex = cartItems.findIndex((item) => item.productId === productId)
+    const existingItemIndex = cartItems.findIndex((item) => 
+      item.productId === productId && item.isPreOrder === (isPreOrder || false)
+    )
 
     if (existingItemIndex >= 0) {
-      // Actualizar cantidad
+      // Actualizar cantidad del mismo tipo (normal o pre-orden)
       cartItems[existingItemIndex].quantity += quantity
     } else {
       // Añadir nuevo item
@@ -66,6 +69,7 @@ export async function POST(request: Request) {
         id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         productId,
         quantity,
+        isPreOrder: isPreOrder || false, // ← NUEVO: Guardar flag de pre-orden
         addedAt: new Date().toISOString(),
       }
       cartItems.push(newItem)
@@ -78,6 +82,7 @@ export async function POST(request: Request) {
 
     // Log para debug
     console.log(`Carrito ${cartId} actualizado:`, cartItems.length, "items")
+    console.log("Pre-orden agregada:", isPreOrder)
 
     const response = NextResponse.json({ success: true })
     response.cookies.set("cartId", cartId, {

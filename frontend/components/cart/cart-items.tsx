@@ -5,7 +5,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Trash2, Plus, Minus, ShoppingCart } from "lucide-react"
+import { Trash2, Plus, Minus, ShoppingCart, Package } from "lucide-react" // ← NUEVO ICONO
 import { useToast } from "@/components/ui/use-toast"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -16,6 +16,7 @@ interface CartItem {
   price: number
   image: string
   quantity: number
+  isPreOrder?: boolean // ← NUEVO CAMPO
 }
 
 export default function CartItems() {
@@ -246,21 +247,43 @@ export default function CartItems() {
       <CardContent>
         <div className="space-y-4">
           {cartItems.map((item) => (
-            <div key={item.id} className="flex items-center gap-4 p-4 border rounded-lg">
+            <div 
+              key={item.id} 
+              className={`flex items-center gap-4 p-4 border rounded-lg ${
+                item.isPreOrder ? 'bg-orange-50 border-orange-200' : 'bg-white'
+              }`}
+            >
               {/* Imagen del producto */}
               <div className="relative h-16 w-16 flex-shrink-0">
                 <Image src={item.image || "/placeholder.svg"} alt={item.name} fill className="object-cover rounded" />
+                {item.isPreOrder && (
+                  <div className="absolute -top-1 -right-1 bg-orange-500 text-white rounded-full p-1">
+                    <Package className="h-3 w-3" />
+                  </div>
+                )}
               </div>
 
               {/* Información del producto */}
               <div className="flex-grow min-w-0">
-                <Link
-                  href={`/productos/${item.product_id}`}
-                  className="font-medium text-[#005f73] hover:underline block truncate"
-                >
-                  {item.name}
-                </Link>
+                <div className="flex items-center gap-2 mb-1">
+                  <Link
+                    href={`/productos/${item.product_id}`}
+                    className="font-medium text-[#005f73] hover:underline block truncate"
+                  >
+                    {item.name}
+                  </Link>
+                  {item.isPreOrder && (
+                    <span className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full whitespace-nowrap">
+                      Pre-orden
+                    </span>
+                  )}
+                </div>
                 <p className="text-sm text-gray-600">${item.price.toLocaleString()}/kg</p>
+                {item.isPreOrder && (
+                  <p className="text-xs text-orange-600 mt-1">
+                    📦 Producto en pre-orden - Te notificaremos cuando esté disponible
+                  </p>
+                )}
               </div>
 
               {/* Controles de cantidad - CU26 */}
@@ -310,11 +333,17 @@ export default function CartItems() {
                 size="icon"
                 onClick={() => removeItem(item.id)}
                 disabled={updatingItems.has(item.id)}
-                className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8"
+                className={`h-8 w-8 ${
+                  item.isPreOrder 
+                    ? 'text-orange-500 hover:text-orange-700 hover:bg-orange-50' 
+                    : 'text-red-500 hover:text-red-700 hover:bg-red-50'
+                }`}
                 title="Eliminar producto"
               >
                 {updatingItems.has(item.id) ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
+                  <div className={`animate-spin rounded-full h-4 w-4 border-b-2 ${
+                    item.isPreOrder ? 'border-orange-500' : 'border-red-500'
+                  }`} />
                 ) : (
                   <Trash2 className="h-4 w-4" />
                 )}

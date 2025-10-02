@@ -4,43 +4,45 @@ import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import AddToCartButton from "@/components/cart/add-to-cart-button"
 import AddToWishlistButton from "@/components/product/add-to-wishlist-button"
+import PreOrderButton from "@/components/product/pre-order-button"
 import RelatedProducts from "@/components/product/related-products"
 import ProductImageGallery from "@/components/product/product-image-gallery"
-import { Suspense } from "react"
+import { Suspense, useEffect, useState, use } from "react"
 import { getProductById } from "@/lib/server/products-data"
 
 // IMPORTA LOS COMPONENTES DE RESEÑAS
 import ReviewForm from "@/components/reviews/review-form"
 import ReviewList from "@/components/reviews/review-list"
 import ReviewsSection from "@/components/reviews/reviews-section"
-import { useEffect, useState } from "react"
 
 interface ProductPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
-
-
 export default function ProductPage({ params }: ProductPageProps) {
-  const productId = Number.parseInt(params.id)
+  const resolvedParams = use(params)
+  const productId = Number.parseInt(resolvedParams.id)
   const product = getProductById(productId)
 
-  // --- INICIO: LÓGICA DE RESEÑAS ---
   const [reviews, setReviews] = useState<any[]>([])
 
   const fetchReviews = async () => {
-    const res = await fetch(`/api/reviews/upload?productId=${productId}`)
-    const data = await res.json()
-    setReviews(data)
+    try {
+      const res = await fetch(`/api/reviews/upload?productId=${productId}`)
+      if (!res.ok) throw new Error('Error fetching reviews')
+      const data = await res.json()
+      setReviews(Array.isArray(data) ? data : [])
+    } catch (error) {
+      console.error('Error fetching reviews:', error)
+      setReviews([])
+    }
   }
 
   useEffect(() => {
     fetchReviews()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-  // --- FIN: LÓGICA DE RESEÑAS ---
+  }, [productId])
 
   if (!product) {
     notFound()
@@ -93,19 +95,32 @@ export default function ProductPage({ params }: ProductPageProps) {
                   </div>
                 </div>
 
-                <div className="mt-auto space-y-3">
-                  {product.stock > 0 ? (
-                    <>
-                      <AddToCartButton productId={product.id.toString()} />
-                      <AddToWishlistButton product={product} />
-                    </>
-                  ) : (
-                    <div className="p-3 rounded-md bg-yellow-50 text-yellow-800 border border-yellow-200">
-                      Este producto está <strong>sin stock</strong>, pero puedes
-                      <strong> preordenarlo</strong>.
-                      <div className="mt-2">
-                        <AddToWishlistButton product={product} />
-                      </div>
+                <div className="mt-auto space-y-4">
+                  {/* BOTONES MEJORADOS - VISIBLES Y CLAROS */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Botón Añadir al Carrito - SOLO si hay stock */}
+                    {product.stock > 0 && (
+                      <AddToCartButton 
+                        productId={product.id.toString()} 
+                        className="w-full bg-[#2a9d8f] hover:bg-[#21867a] text-white font-bold h-12"
+                      />
+                    )}
+                    
+                    {/* Botón Pre-orden - SIEMPRE disponible */}
+                    <PreOrderButton 
+                      productId={product.id.toString()}
+                      productName={product.name}
+                      className="w-full h-12"
+                    />
+                  </div>
+
+                  {/* Wishlist */}
+                  <AddToWishlistButton product={product} />
+                  
+                  {/* Mensaje informativo cuando no hay stock */}
+                  {product.stock === 0 && (
+                    <div className="p-3 rounded-md bg-orange-50 text-orange-800 border border-orange-200 text-sm">
+                      <strong>📦 Producto en pre-orden:</strong> Se reservará y te notificaremos cuando esté disponible.
                     </div>
                   )}
                 </div>
@@ -119,7 +134,6 @@ export default function ProductPage({ params }: ProductPageProps) {
             <ReviewForm productId={product.id.toString()} onNewReview={fetchReviews} />
             <ReviewList reviews={reviews} />
           </div>
-          {/* --- FIN SECCIÓN DE RESEÑAS --- */}
 
           <div className="mt-12">
             <h2 className="text-2xl font-bold mb-6">Productos relacionados</h2>

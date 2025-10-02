@@ -9,8 +9,7 @@ interface Review {
   rating: number
 }
 
-//Maneja la logica para mostrar el tipo de estrella correcta, por ejemplo, maneja que si hay decimales en el promedio
-//se muestre una estrella a la mitad
+// Maneja la logica para mostrar el tipo de estrella correcta
 function StarDisplay({ rating, size = "md", showNumber = false }: { 
   rating: number, 
   size?: "sm" | "md" | "lg",
@@ -57,10 +56,11 @@ function StarDisplay({ rating, size = "md", showNumber = false }: {
   )
 }
 
+export default function ReviewList({ reviews }: { reviews: any[] }) {
+  // Validación robusta para asegurar que reviews sea un array
+  const safeReviews = Array.isArray(reviews) ? reviews : []
 
-//Muestra las reviews que le entregan
-export default function ReviewList({ reviews }: { reviews: Review[] }) {
-  if (!reviews || reviews.length === 0) {
+  if (safeReviews.length === 0) {
     return (
       <div className="text-center py-8">
         <StarDisplay rating={0} size="lg" showNumber={true} />
@@ -69,7 +69,10 @@ export default function ReviewList({ reviews }: { reviews: Review[] }) {
     )
   }
 
-  const averageRating = reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+  // Cálculo seguro del promedio
+  const averageRating = safeReviews.length > 0 
+    ? safeReviews.reduce((sum, review) => sum + (review.rating || 0), 0) / safeReviews.length
+    : 0
 
   return (
     <div className="space-y-6">
@@ -80,7 +83,7 @@ export default function ReviewList({ reviews }: { reviews: Review[] }) {
             <div className="text-5xl font-bold text-green-800 mb-2">{averageRating.toFixed(1)}</div>
             <StarDisplay rating={averageRating} size="lg" />
             <div className="text-sm text-green-600 mt-2">
-              Basado en {reviews.length} opinión{reviews.length !== 1 ? 'es' : ''}
+              Basado en {safeReviews.length} opinión{safeReviews.length !== 1 ? 'es' : ''}
             </div>
           </div>
         </div>
@@ -88,11 +91,11 @@ export default function ReviewList({ reviews }: { reviews: Review[] }) {
 
       <div className="space-y-4">
         <h3 className="text-xl font-bold text-gray-800">Opiniones de clientes</h3>
-        {reviews.map((review) => (
+        {safeReviews.map((review) => (
           <div key={review.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
             <div className="flex justify-between items-start mb-3">
               <div className="flex items-center space-x-3">
-                <StarDisplay rating={review.rating} size="sm" showNumber={true} />
+                <StarDisplay rating={review.rating || 0} size="sm" showNumber={true} />
               </div>
               <span className="text-sm text-gray-500">
                 {new Date(review.fecha).toLocaleDateString('es-ES', {

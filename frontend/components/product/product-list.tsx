@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { ShoppingCart, Eye, RefreshCw, Heart } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { useWishlist } from "@/contexts/wishlist-context"
+import PreOrderButton from "./pre-order-button" // ← NUEVA IMPORTACIÓN
 
 interface Product {
   id: number
@@ -200,16 +201,29 @@ export default function ProductList() {
 
               <div className="text-sm text-gray-500 mb-4">Stock disponible: {product.stock} kg</div>
 
+              {/* BOTONES ACTUALIZADOS - AMBOS SIEMPRE DISPONIBLES */}
               <div className="flex gap-2">
+                {/* Botón Añadir al Carrito (stock inmediato) */}
                 <Button
                   className="flex-1 bg-[#2a9d8f] hover:bg-[#21867a]"
                   onClick={() => addToCart(product)}
-                  disabled={product.stock === 0}
                 >
                   <ShoppingCart className="mr-2 h-4 w-4" />
-                  {product.stock === 0 ? "Sin stock" : "Añadir"}
+                  Añadir
                 </Button>
-                <Link href={`/productos/${product.id}`} className="flex-1">
+
+                {/* Botón Pre-orden (siempre disponible) */}
+                <PreOrderButton 
+                  productId={product.id.toString()}
+                  productName={product.name}
+                  variant="outline"
+                  className="flex-1 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white"
+                />
+              </div>
+
+              {/* Botón Detalles */}
+              <div className="mt-2">
+                <Link href={`/productos/${product.id}`}>
                   <Button
                     variant="outline"
                     className="w-full border-[#2a9d8f] text-[#2a9d8f] hover:bg-[#2a9d8f] hover:text-white"

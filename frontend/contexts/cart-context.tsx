@@ -10,6 +10,7 @@ interface CartItem {
   price: number
   image: string
   quantity: number
+  isPreOrder?: boolean  // ← NUEVO CAMPO AQUÍ
 }
 
 interface CartContextType {
@@ -19,7 +20,7 @@ interface CartContextType {
   shipping: number
   total: number
   loading: boolean
-  addToCart: (productId: number, quantity: number) => Promise<boolean>
+  addToCart: (productId: number, quantity: number, isPreOrder?: boolean) => Promise<boolean> // ← ACTUALIZADO
   updateQuantity: (itemId: string, quantity: number) => Promise<void>
   removeItem: (itemId: string) => Promise<void>
   clearCart: () => Promise<void>
@@ -61,14 +62,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     loadCart()
   }, [refreshCart])
 
-  // Añadir al carrito
+  // Añadir al carrito - ACTUALIZADO con isPreOrder
   const addToCart = useCallback(
-    async (productId: number, quantity: number): Promise<boolean> => {
+    async (productId: number, quantity: number, isPreOrder: boolean = false): Promise<boolean> => {
       try {
         const response = await fetch("/api/cart", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ productId, quantity }),
+          body: JSON.stringify({ productId, quantity, isPreOrder }), // ← ACTUALIZADO
         })
 
         if (response.ok) {
