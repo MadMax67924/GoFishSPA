@@ -3,6 +3,7 @@ import Footer from "@/components/layout/footer";
 import ContactFormPage from "@/components/forms/contact-form-page"
 import { Card, CardContent } from "@/components/ui/card"
 import { MapPin, Phone, Mail, Clock } from "lucide-react"
+import Link from "next/link";
 
 export const metadata = {
   title: "Contacto | GoFish SpA",
@@ -81,6 +82,13 @@ export default function ContactoPage() {
               <div>
                 <h2 className="text-3xl font-bold text-[#005f73] mb-6">Envíanos un mensaje</h2>
                 <ContactFormPage />
+                <div className="mt-8 text-center">
+                  <Link href="/proveedores">
+                    <button className="bg-[#005f73] text-white px-6 py-3 rounded-md hover:bg-[#003d4d] transition">
+                      ¿Eres proveedor? Regístrate aquí
+                    </button>
+                  </Link>
+                </div>
               </div>
 
               {/* Información adicional y mapa */}

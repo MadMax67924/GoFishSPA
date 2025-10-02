@@ -59,7 +59,14 @@ export default function ProductPage({ params }: ProductPageProps) {
               </div>
 
               <div className="flex flex-col">
-                <h1 className="text-3xl font-bold text-[#005f73] mb-2">{product.name}</h1>
+                <h1 className="text-3xl font-bold text-[#005f73] mb-2 flex items-center gap-3">
+                  {product.name}
+                  {product.stock === 0 && (
+                    <span className="text-xs font-medium px-2 py-1 rounded bg-yellow-100 text-yellow-800 border border-yellow-300">
+                      Disponible para preorden
+                    </span>
+                  )}
+                </h1>
                 <div className="text-2xl font-bold text-[#2a9d8f] mb-4">${product.price.toLocaleString()}/kg</div>
 
                 <div className="bg-gray-50 p-4 rounded-lg mb-6">
@@ -87,8 +94,20 @@ export default function ProductPage({ params }: ProductPageProps) {
                 </div>
 
                 <div className="mt-auto space-y-3">
-                  <AddToCartButton productId={product.id.toString()} />
-                  <AddToWishlistButton product={product} />
+                  {product.stock > 0 ? (
+                    <>
+                      <AddToCartButton productId={product.id.toString()} />
+                      <AddToWishlistButton product={product} />
+                    </>
+                  ) : (
+                    <div className="p-3 rounded-md bg-yellow-50 text-yellow-800 border border-yellow-200">
+                      Este producto está <strong>sin stock</strong>, pero puedes
+                      <strong> preordenarlo</strong>.
+                      <div className="mt-2">
+                        <AddToWishlistButton product={product} />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
