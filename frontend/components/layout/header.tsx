@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Menu, ShoppingCart, User, Search, Heart } from "lucide-react"
+import { Menu, ShoppingCart, User, Search, Heart, History } from "lucide-react"
 import LoginModal from "./login-modal"
 import CartIndicator from "@/components/cart/cart-indicator"
 import WishlistIndicator from "@/components/product/wishlist-indicator"
@@ -77,6 +77,11 @@ export default function Header() {
                 <Button variant="ghost" className="hover:text-[#e9c46a] transition-colors relative">
                   <Heart className="h-5 w-5" />
                   <WishlistIndicator />
+                </Button>
+              </Link>
+              <Link href="/historial">
+                <Button variant="ghost" className="hover:text-[#e9c46a] transition-colors relative">
+                  <History className="h-5 w-5" />
                 </Button>
               </Link>
               <Link href="/carrito">

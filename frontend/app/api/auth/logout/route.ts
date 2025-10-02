@@ -3,7 +3,8 @@ import { cookies } from "next/headers"
 
 export async function POST() {
   // Eliminar cookie de autenticación
-  cookies().set("authToken", "", {
+  const cokieStore = await cookies()
+  cokieStore.set("authToken", "", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     maxAge: 0,

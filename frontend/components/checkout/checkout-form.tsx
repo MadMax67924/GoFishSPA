@@ -29,7 +29,27 @@ export default function CheckoutForm() {
   const router = useRouter()
   const { toast } = useToast()
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  //Lista de regiones de Chile
+  const regions = [
+    "Arica y Parinacota",
+    "Tarapacá",
+    "Antofagasta",
+    "Atacama",
+    "Coquimbo",
+    "Valparaíso",
+    "Metropolitana de Santiago",
+    "Libertador General Bernardo O'Higgins",
+    "Maule",
+    "Ñuble",
+    "Biobío",
+    "La Araucanía",
+    "Los Ríos",
+    "Los Lagos",
+    "Aysén del General Carlos Ibáñez del Campo",
+    "Magallanes y de la Antártica Chilena"
+  ]
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
@@ -39,8 +59,19 @@ export default function CheckoutForm() {
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
+    
     e.preventDefault()
     setIsSubmitting(true)
+
+    const res = await fetch("/api/cart")
+
+    if (!res.ok) throw new Error("Error al cargar el resumen del carrito")
+    const cart = await res.json()
+    const items = cart.items || []
+    const orderData = {
+    ...formData,
+    cartItems: items // Enviar como array directamente
+  };
 
     try {
       const response = await fetch("/api/orders", {
@@ -48,7 +79,7 @@ export default function CheckoutForm() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(orderData),
       })
 
       const data = await response.json()
@@ -61,9 +92,18 @@ export default function CheckoutForm() {
         title: "¡Pedido realizado con éxito!",
         description: `Número de pedido: ${data.orderNumber}`,
       })
+      const subtotal = items.reduce((acc: number, item: any) => acc + item.price * item.quantity, 0)
+      const shipping = subtotal > 30000 ? 0 : 5000
+      const total = subtotal + shipping
+      
 
+      if(total < 20000 && formData.region != "Valparaíso") {
+        router.push(`/redireccion-whattsap?order=${data.orderId}`)
+      }
       // Redirigir a la página de confirmación
-      router.push(`/checkout/confirmacion?order=${data.orderNumber}`)
+      else {
+        router.push(`/checkout/confirmacion?order=${data.orderNumber}`)
+      }
     } catch (error: any) {
       console.error("Error al procesar el pedido:", error)
       toast({
@@ -124,7 +164,21 @@ export default function CheckoutForm() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="region">Región</Label>
-              <Input id="region" name="region" value={formData.region} onChange={handleChange} required />
+              <select
+                id="region"
+                name="region"
+                value={formData.region}
+                onChange={handleChange}
+                required
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">Selecciona una región</option>
+                {regions.map((region) => (
+                  <option key={region} value={region}>
+                    {region}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -173,7 +227,10 @@ export default function CheckoutForm() {
         </CardContent>
       </Card>
 
-      <Button type="submit" className="w-full bg-[#005f73] hover:bg-[#003d4d] h-12 text-lg" disabled={isSubmitting}>
+      <Button type="submit" 
+      className="w-full bg-[#005f73] hover:bg-[#003d4d] h-12 text-lg" 
+      disabled={isSubmitting}
+      >
         {isSubmitting ? "Procesando..." : "Confirmar pedido"}
       </Button>
     </form>
