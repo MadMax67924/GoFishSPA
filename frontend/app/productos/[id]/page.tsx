@@ -4,15 +4,13 @@ import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import AddToCartButton from "@/components/cart/add-to-cart-button"
 import AddToWishlistButton from "@/components/product/add-to-wishlist-button"
+import PreorderButton from "@/components/product/preorder-button" // 🆕 NUEVO IMPORT
 import RelatedProducts from "@/components/product/related-products"
 import ProductImageGallery from "@/components/product/product-image-gallery"
 import { Suspense } from "react"
 import { getProductById } from "@/lib/server/products-data"
-
-// IMPORTA LOS COMPONENTES DE RESEÑAS
 import ReviewForm from "@/components/reviews/review-form"
 import ReviewList from "@/components/reviews/review-list"
-import ReviewsSection from "@/components/reviews/reviews-section"
 import { useEffect, useState } from "react"
 
 interface ProductPageProps {
@@ -21,13 +19,10 @@ interface ProductPageProps {
   }
 }
 
-
-
 export default function ProductPage({ params }: ProductPageProps) {
   const productId = Number.parseInt(params.id)
   const product = getProductById(productId)
 
-  // --- INICIO: LÓGICA DE RESEÑAS ---
   const [reviews, setReviews] = useState<any[]>([])
 
   const fetchReviews = async () => {
@@ -40,11 +35,12 @@ export default function ProductPage({ params }: ProductPageProps) {
     fetchReviews()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  // --- FIN: LÓGICA DE RESEÑAS ---
 
   if (!product) {
     notFound()
   }
+
+  const hasStock = product.stock > 0
 
   return (
     <>
@@ -53,7 +49,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         <div className="container mx-auto px-4">
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
-              {/* CU20: Galería de imágenes en alta calidad */}
+              {/* Galería de imágenes */}
               <div className="relative">
                 <ProductImageGallery images={product.images || [product.image]} productName={product.name} />
               </div>
@@ -61,7 +57,7 @@ export default function ProductPage({ params }: ProductPageProps) {
               <div className="flex flex-col">
                 <h1 className="text-3xl font-bold text-[#005f73] mb-2 flex items-center gap-3">
                   {product.name}
-                  {product.stock === 0 && (
+                  {!hasStock && (
                     <span className="text-xs font-medium px-2 py-1 rounded bg-yellow-100 text-yellow-800 border border-yellow-300">
                       Disponible para preorden
                     </span>
@@ -76,15 +72,15 @@ export default function ProductPage({ params }: ProductPageProps) {
 
                 <div className="mb-6">
                   <div className="flex items-center mb-2">
-                    {product.stock > 0 ? (
+                    {hasStock ? (
                       <>
                         <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
                         <span className="text-green-700">En stock: {product.stock} kg disponibles</span>
                       </>
                     ) : (
                       <>
-                        <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-                        <span className="text-red-700">Sin stock</span>
+                        <div className="w-3 h-3 rounded-full bg-orange-500 mr-2"></div>
+                        <span className="text-orange-700">Sin stock - Disponible para preorden</span>
                       </>
                     )}
                   </div>
@@ -94,18 +90,37 @@ export default function ProductPage({ params }: ProductPageProps) {
                 </div>
 
                 <div className="mt-auto space-y-3">
-                  {product.stock > 0 ? (
+                  {hasStock ? (
                     <>
-                      <AddToCartButton productId={product.id.toString()} />
+                      <AddToCartButton 
+                        productId={product.id.toString()} 
+                        className="w-full py-3"
+                      />
                       <AddToWishlistButton product={product} />
                     </>
                   ) : (
-                    <div className="p-3 rounded-md bg-yellow-50 text-yellow-800 border border-yellow-200">
-                      Este producto está <strong>sin stock</strong>, pero puedes
-                      <strong> preordenarlo</strong>.
-                      <div className="mt-2">
-                        <AddToWishlistButton product={product} />
+                    <div className="space-y-3">
+                      <div className="p-4 rounded-lg bg-orange-50 border border-orange-200">
+                        <div className="flex items-start mb-3">
+                          <svg className="w-5 h-5 text-orange-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <div>
+                            <p className="text-orange-800 font-medium">Producto sin stock</p>
+                            <p className="text-orange-700 text-sm">Preordena ahora y te notificaremos cuando esté disponible (estimado: 2-3 semanas)</p>
+                          </div>
+                        </div>
+                        
+                        {/* 🆕 BOTÓN DE PREORDEN */}
+                        <PreorderButton 
+                          productId={product.id.toString()}
+                          productName={product.name}
+                          quantity={1}
+                          className="mt-2"
+                        />
                       </div>
+                      
+                      <AddToWishlistButton product={product} />
                     </div>
                   )}
                 </div>
@@ -113,14 +128,14 @@ export default function ProductPage({ params }: ProductPageProps) {
             </div>
           </div>
 
-          {/* --- SECCIÓN DE RESEÑAS --- */}
+          {/* Sección de reseñas */}
           <div className="mt-12">
             <h2 className="text-2xl font-bold mb-6">Reseñas del producto</h2>
             <ReviewForm productId={product.id.toString()} onNewReview={fetchReviews} />
             <ReviewList reviews={reviews} />
           </div>
-          {/* --- FIN SECCIÓN DE RESEÑAS --- */}
 
+          {/* Productos relacionados */}
           <div className="mt-12">
             <h2 className="text-2xl font-bold mb-6">Productos relacionados</h2>
             <Suspense fallback={<div className="text-center py-8">Cargando productos relacionados...</div>}>

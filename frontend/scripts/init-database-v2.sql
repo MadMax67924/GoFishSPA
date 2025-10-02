@@ -158,5 +158,22 @@ INSERT IGNORE INTO products (name, description, price, image, category, stock, f
 -- Insertar usuario administrador de ejemplo (contraseña: admin123)
 INSERT IGNORE INTO users (name, email, password, role, email_verified) VALUES
 ('Administrador GoFish', 'admin@gofish.cl', '$2b$12$oY8XRaFPgaAroDCsM.YBbet.NMVS6CzyQIA6hitFYWMR7.riMZ35S', 'admin', TRUE);
+CREATE TABLE IF NOT EXISTS preorders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT NOT NULL,
+    product_name VARCHAR(255) NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    user_id INT NULL,
+    customer_email VARCHAR(255) NULL,
+    estimated_date VARCHAR(100) NULL,
+    status ENUM('pending', 'notified', 'cancelled') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_product_id (product_id),
+    INDEX idx_status (status),
+    INDEX idx_created_at (created_at)
+);
 
 COMMIT;
