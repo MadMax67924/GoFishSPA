@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { executeQuery } from "@/lib/mysql"
 import { validateEmail, validatePassword, generateSecureToken } from "@/lib/validation"
+import { sendVerificationEmail } from '@/lib/email'
 
 // Caso 1: Registrar nueva cuenta de usuario (mejorado)
 export async function POST(request: Request) {
@@ -110,19 +111,31 @@ export async function POST(request: Request) {
       INSERT INTO users (name, email, password, email_verified, verification_token, verification_token_expires, failed_login_attempts, account_locked_until) 
       VALUES (?, ?, ?, FALSE, ?, ?, 0, NULL)
     `
-    const result = await executeQuery(insertSql, [name, email, hashedPassword, verificationToken, tokenExpiry])
+    // ... tu código existente hasta después de INSERT ...
 
-    // En un entorno real, aquí enviarías el correo de verificación
-    // Por ahora, devolvemos el token para testing
-    const userId = (result as any).insertId
+const result = await executeQuery(insertSql, [name, email, hashedPassword, verificationToken, tokenExpiry])
+const userId = (result as any).insertId
 
-    return NextResponse.json({
-      success: true,
-      userId,
-      message: "Cuenta creada exitosamente. Por favor, verifica tu correo electrónico.",
-      // En producción, NO devolver el token en la respuesta
-      verificationToken: process.env.NODE_ENV === "development" ? verificationToken : undefined,
-    })
+console.log('🔍 ANTES DE ENVIAR EMAIL - Llegó hasta aquí?')
+console.log('🔍 Variables:', { email, token: verificationToken, name })
+
+// ENVÍO DEL EMAIL DE VERIFICACIÓN
+try {
+  console.log('🔍 LLAMANDO A sendVerificationEmail...')
+  await sendVerificationEmail(email, verificationToken, name)
+  console.log('✅ Email de verificación enviado a:', email)
+} catch (emailError) {
+  console.error('❌ Error enviando email de verificación:', emailError)
+}
+
+
+// ✅ AHORA SÍ EL RETURN
+return NextResponse.json({
+  success: true,
+  userId,
+  message: "Cuenta creada exitosamente. Por favor, verifica tu correo electrónico.",
+  verificationToken: process.env.NODE_ENV === "development" ? verificationToken : undefined,
+})
   } catch (error) {
     console.error("Error al registrar usuario:", error)
     return NextResponse.json(
