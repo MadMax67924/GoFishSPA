@@ -3,6 +3,7 @@ import { cookies } from "next/headers"
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
 import { executeQuery } from "@/lib/mysql"
+import { logSecurityEvent } from '@/lib/security-logger'
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-development-jwt-secret-key"
 const MAX_LOGIN_ATTEMPTS = 5
@@ -81,10 +82,32 @@ export async function POST(request: Request) {
       const newFailedAttempts = (user.failed_login_attempts || 0) + 1
       let lockoutUntil = null
 
+       await logSecurityEvent({
+    userId: user.id,
+    email: user.email,
+    eventType: 'failed_login',
+    severity: newFailedAttempts >= 3 ? 'high' : 'medium',
+    description: `Intento fallido de login - Intento ${newFailedAttempts} de 5`,
+    ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
+    userAgent: request.headers.get('user-agent') || 'unknown'
+  })
+
+      
       // Caso 7: Bloquear cuenta si se exceden los intentos
-      if (newFailedAttempts >= MAX_LOGIN_ATTEMPTS) {
-        lockoutUntil = new Date(Date.now() + LOCKOUT_DURATION)
-      }
+       if (newFailedAttempts >= MAX_LOGIN_ATTEMPTS) {
+    lockoutUntil = new Date(Date.now() + LOCKOUT_DURATION)
+    
+    // 🔒 LOGGING DE SEGURIDAD - Cuenta bloqueada
+    await logSecurityEvent({
+      userId: user.id,
+      email: user.email,
+      eventType: 'account_locked',
+      severity: 'high',
+      description: `Cuenta bloqueada temporalmente por exceso de intentos fallidos`,
+      ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown'
+    })
+  }
 
       await executeQuery(
         `UPDATE users 

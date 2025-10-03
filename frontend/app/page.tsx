@@ -5,6 +5,7 @@ import Features from "@/components/sections/features"
 import Testimonials from "@/components/sections/testimonials"
 import ContactForm from "@/components/forms/contact-form"
 import Footer from "@/components/layout/footer"
+import PopularProducts from '@/components/popular-products'
 
 export default function Home() {
   return (
@@ -14,6 +15,7 @@ export default function Home() {
       <ProductCatalog />
       <Features />
       <Testimonials />
+      <PopularProducts />
       <ContactForm />
       <Footer />
     </main>
