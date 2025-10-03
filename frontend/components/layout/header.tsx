@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
@@ -12,6 +11,7 @@ import { Menu, ShoppingCart, User, Search, Heart, History, Mail } from "lucide-r
 import LoginModal from "./login-modal"
 import CartIndicator from "@/components/cart/cart-indicator"
 import WishlistIndicator from "@/components/product/wishlist-indicator"
+import AdvancedSearchBar from "@/components/search/search-bar" // ← NUEVO IMPORT
 
 export default function Header() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
@@ -49,18 +49,7 @@ export default function Header() {
 
             {/* Buscador - Desktop */}
             <div className="hidden md:flex flex-1 max-w-md mx-8">
-              <form onSubmit={handleSearch} className="flex w-full">
-                <Input
-                  type="text"
-                  placeholder="Buscar productos..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="rounded-r-none bg-white text-gray-900 border-white"
-                />
-                <Button type="submit" className="bg-[#2a9d8f] hover:bg-[#21867a] rounded-l-none px-3">
-                  <Search className="h-4 w-4" />
-                </Button>
-              </form>
+              <AdvancedSearchBar /> {/* ← NUEVO COMPONENTE DE BÚSQUEDA AVANZADA */}
             </div>
 
             {/* Acciones - Desktop */}
