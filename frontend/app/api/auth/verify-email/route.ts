@@ -2,6 +2,67 @@ import { NextResponse } from "next/server"
 import { executeQuery } from "@/lib/mysql"
 import { isValidToken, generateSecureToken } from "@/lib/validation"
 
+// Caso 4: Confirmar Cuenta de Usuario vía Correo (GET desde email)
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const token = searchParams.get('token')
+
+    if (!token) {
+      return NextResponse.json({ error: "Token de verificación requerido" }, { status: 400 })
+    }
+
+    if (!isValidToken(token)) {
+      return NextResponse.json({ error: "Token de verificación inválido" }, { status: 400 })
+    }
+
+    // Buscar usuario con el token
+    const sql = `
+      SELECT id, email, name, verification_token_expires 
+      FROM users 
+      WHERE verification_token = ? AND email_verified = FALSE
+    `
+    const users = await executeQuery(sql, [token])
+
+    if (!Array.isArray(users) || users.length === 0) {
+      return NextResponse.json({ error: "Token de verificación inválido o ya utilizado" }, { status: 400 })
+    }
+
+    const user = users[0] as any
+
+    // Verificar si el token ha expirado
+    if (new Date() > new Date(user.verification_token_expires)) {
+      return NextResponse.json({ error: "El token de verificación ha expirado" }, { status: 400 })
+    }
+
+    // Activar la cuenta
+    const updateSql = `
+      UPDATE users 
+      SET email_verified = TRUE, verification_token = NULL, verification_token_expires = NULL, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `
+    await executeQuery(updateSql, [user.id])
+
+    // Redirigir a la página de éxito
+    return new Response(null, {
+      status: 302,
+      headers: {
+        'Location': '/auth/verify-email?success=true'
+      }
+    })
+
+  } catch (error) {
+    console.error("Error al verificar email:", error)
+    // Redirigir a página de error
+    return new Response(null, {
+      status: 302,
+      headers: {
+        'Location': '/auth/verify-email?error=verification_failed'
+      }
+    })
+  }
+}
+
 // Caso 4: Confirmar Cuenta de Usuario vía Correo
 export async function POST(request: Request) {
   try {
