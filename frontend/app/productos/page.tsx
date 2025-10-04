@@ -3,13 +3,18 @@ import Footer from "@/components/layout/footer";
 import ProductList from "@/components/product/product-list"
 import ProductFilters from "@/components/product/product-filters"
 import { Suspense } from "react"
+import { PromotionBanner } from '@/components/product/promotion-banner';
 
 export const metadata = {
   title: "Productos | GoFish SpA",
   description: "Catálogo completo de productos marinos frescos de GoFish SpA",
 }
 
-export default function ProductsPage() {
+export default function ProductosPage() {
+  // Fecha de fin de la promoción de langostinos (ejemplo: 7 días desde ahora)
+  const langostinosPromoEndDate = new Date();
+  langostinosPromoEndDate.setDate(langostinosPromoEndDate.getDate() + 7);
+  
   return (
     <>
       <Header />
