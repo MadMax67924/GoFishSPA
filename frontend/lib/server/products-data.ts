@@ -19,7 +19,7 @@ export const PRODUCTS_DATA: Product[] = [
     category: "pescados",
     description:
       "Salmón fresco del día, ideal para preparaciones crudas como sushi o ceviches. Pescado de primera calidad con certificación de origen.",
-    stock: 50,
+    stock: 0,
     featured: true,
     images: [
       "/Salmon portada.jpg?height=800&width=800",
