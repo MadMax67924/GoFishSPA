@@ -1,0 +1,120 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:143.0) Gecko/20100101 Firefox/143.0" version="28.2.5">
+  <diagram name="Página-1" id="eC3P_L-lj1VCmn-JV5OG">
+    <mxGraphModel dx="789" dy="840" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="wrdZNbvJKTnP5NnuVsGi-5" value="usuario" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;labelPosition=center;align=center;" parent="1" vertex="1">
+          <mxGeometry x="10" y="180" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="wrdZNbvJKTnP5NnuVsGi-7" value="V_page.tsx" style="html=1;whiteSpace=wrap;fillColor=#FFDFB2;" parent="1" vertex="1">
+          <mxGeometry x="110" y="185" width="110" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="wrdZNbvJKTnP5NnuVsGi-8" value="C_route.ts" style="html=1;whiteSpace=wrap;fillColor=#C9BDD0;" parent="1" vertex="1">
+          <mxGeometry x="510" y="185" width="110" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="wrdZNbvJKTnP5NnuVsGi-10" value="" style="endArrow=none;dashed=1;html=1;rounded=0;" parent="1" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="30" y="560" as="sourcePoint" />
+            <mxPoint x="30" y="260" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wrdZNbvJKTnP5NnuVsGi-11" value="" style="endArrow=none;dashed=1;html=1;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" target="wrdZNbvJKTnP5NnuVsGi-7" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="165" y="560" as="sourcePoint" />
+            <mxPoint x="210" y="320" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wrdZNbvJKTnP5NnuVsGi-12" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="35" y="300" as="sourcePoint" />
+            <mxPoint x="165" y="300" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wrdZNbvJKTnP5NnuVsGi-13" value="1.Visita pagina principal(/)" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="50" y="260" width="100" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="wrdZNbvJKTnP5NnuVsGi-15" value="" style="endArrow=none;dashed=1;html=1;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" target="wrdZNbvJKTnP5NnuVsGi-8" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="565" y="560" as="sourcePoint" />
+            <mxPoint x="400" y="320" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="565" y="310" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wrdZNbvJKTnP5NnuVsGi-16" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="170" y="305" as="sourcePoint" />
+            <mxPoint x="370" y="305" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wrdZNbvJKTnP5NnuVsGi-17" value="2.Renderiza PopularProducts" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="186" y="270" width="156" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="wrdZNbvJKTnP5NnuVsGi-34" value="Users" style="html=1;whiteSpace=wrap;fillColor=#C9E0C0;" parent="1" vertex="1">
+          <mxGeometry x="710" y="185" width="110" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="wrdZNbvJKTnP5NnuVsGi-35" value="" style="endArrow=none;dashed=1;html=1;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="764.66" y="560" as="sourcePoint" />
+            <mxPoint x="764.66" y="235" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qzo6UomTfs3uiJRXyVif-3" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="565" y="340" as="sourcePoint" />
+            <mxPoint x="755" y="340" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qzo6UomTfs3uiJRXyVif-4" value="3. SELECT products + ORDER BY ventas" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="590" y="310" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="qzo6UomTfs3uiJRXyVif-5" value="5. Retorna productos populares" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry x="0.027" relative="1" as="geometry">
+            <mxPoint x="757.5" y="370" as="sourcePoint" />
+            <mxPoint x="562.5" y="370" as="targetPoint" />
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qzo6UomTfs3uiJRXyVif-8" value="6. NextResponse.json(){products}" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="563" y="430" as="sourcePoint" />
+            <mxPoint x="373" y="430" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qzo6UomTfs3uiJRXyVif-9" value="7. Renderiza productos populares" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="370" y="490" as="sourcePoint" />
+            <mxPoint x="170" y="490" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qzo6UomTfs3uiJRXyVif-10" value="8. Muestra seccion populares" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="160" y="520" as="sourcePoint" />
+            <mxPoint x="40" y="520" as="targetPoint" />
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qzo6UomTfs3uiJRXyVif-16" value="C_popular-products.tsx" style="html=1;whiteSpace=wrap;fillColor=#C9BDD0;" vertex="1" parent="1">
+          <mxGeometry x="320" y="185" width="110" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="qzo6UomTfs3uiJRXyVif-17" value="" style="endArrow=none;dashed=1;html=1;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="374.29" y="560" as="sourcePoint" />
+            <mxPoint x="374.29" y="235" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qzo6UomTfs3uiJRXyVif-18" value="3. GET /api/products/popular" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="390" y="280" width="156" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="qzo6UomTfs3uiJRXyVif-19" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="373" y="310" as="sourcePoint" />
+            <mxPoint x="563" y="310" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
