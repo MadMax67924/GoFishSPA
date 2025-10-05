@@ -14,15 +14,21 @@ export async function POST(request: Request) {
     if (!firstName || !lastName || !email || !phone || !address || !city || !region || !paymentMethod) {
       return NextResponse.json({ error: "Todos los campos requeridos deben ser completados" }, { status: 400 })
     }
+    
     const cookieStore = await cookies()
     const cartId = cookieStore.get("cartId")?.value
     const token = cookieStore.get("authToken")?.value;
-    if (!token) {
-      return null;
-    }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; email: string };
-    const userId = decoded.userId;
+    let userId = null;
+
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; email: string };
+        userId = decoded.userId;
+      } catch (error) {
+        console.error("Token inválido, continuando como usuario no autenticado:", error)
+      }
+    }
 
     if (!cartId) {
       return NextResponse.json({ error: "No hay carrito activo" }, { status: 400 })
@@ -53,7 +59,7 @@ export async function POST(request: Request) {
 
     const orderResult = await executeQuery(orderSql, [
       orderNumber,
-      userId,
+      userId, 
       firstName,
       lastName,
       email,
@@ -72,7 +78,6 @@ export async function POST(request: Request) {
 
     const orderId = (orderResult as any).insertId
     
-
     for (const item of cartItems as any[]) {
       const orderItemSql = `
         INSERT INTO order_items (order_id, product_id, product_name, product_price, quantity, subtotal)
