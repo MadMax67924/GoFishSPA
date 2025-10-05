@@ -1,0 +1,113 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:143.0) Gecko/20100101 Firefox/143.0" version="28.2.5">
+  <diagram name="Page-1" id="BoBWLFV55UTeIA8a_Jpc">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="nwdlHVP9liw4pfbZf8Qb-5" value="&lt;div&gt;C_revisar-admin&lt;/div&gt;&lt;div&gt;(route.ts)&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="-245" y="80" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="nwdlHVP9liw4pfbZf8Qb-6" value="reviews" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="95" y="80" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="nwdlHVP9liw4pfbZf8Qb-7" value="Actor" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="-740" y="80" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="nwdlHVP9liw4pfbZf8Qb-9" value="" style="endArrow=none;dashed=1;html=1;dashPattern=1 3;strokeWidth=2;rounded=0;entryX=0.5;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" target="nwdlHVP9liw4pfbZf8Qb-7">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-725" y="600" as="sourcePoint" />
+            <mxPoint x="-703" y="210" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nwdlHVP9liw4pfbZf8Qb-10" value="" style="endArrow=none;dashed=1;html=1;dashPattern=1 3;strokeWidth=2;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" target="nwdlHVP9liw4pfbZf8Qb-5">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-185" y="600" as="sourcePoint" />
+            <mxPoint x="55" y="410" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nwdlHVP9liw4pfbZf8Qb-11" value="" style="endArrow=none;dashed=1;html=1;dashPattern=1 3;strokeWidth=2;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" target="nwdlHVP9liw4pfbZf8Qb-6">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="155" y="600" as="sourcePoint" />
+            <mxPoint x="225" y="410" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nwdlHVP9liw4pfbZf8Qb-17" value="V_revisar-reviews" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="-460" y="80" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="nwdlHVP9liw4pfbZf8Qb-18" value="" style="endArrow=none;dashed=1;html=1;dashPattern=1 3;strokeWidth=2;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" target="nwdlHVP9liw4pfbZf8Qb-17">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-400" y="600" as="sourcePoint" />
+            <mxPoint x="-370" y="280" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nwdlHVP9liw4pfbZf8Qb-29" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-720" y="240" as="sourcePoint" />
+            <mxPoint x="-405" y="240" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nwdlHVP9liw4pfbZf8Qb-30" value="Clic botón Aprobar" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="-555" y="200" width="120" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="nwdlHVP9liw4pfbZf8Qb-31" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-400" y="270" as="sourcePoint" />
+            <mxPoint x="-180" y="270" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nwdlHVP9liw4pfbZf8Qb-32" value="POST/api/revisar-admin( id, state=1)" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="-400" y="230" width="220" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="nwdlHVP9liw4pfbZf8Qb-33" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-180" y="290" as="sourcePoint" />
+            <mxPoint x="150" y="290" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nwdlHVP9liw4pfbZf8Qb-34" value="UPDATE reviews SET aprovado = ? WHERE id = ?, [true, id]" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="-190" y="250" width="350" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="nwdlHVP9liw4pfbZf8Qb-35" value="" style="endArrow=classic;html=1;rounded=0;dashed=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="160" y="330" as="sourcePoint" />
+            <mxPoint x="-180" y="330" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nwdlHVP9liw4pfbZf8Qb-36" value="ERROR" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="-95" y="298" width="70" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="nwdlHVP9liw4pfbZf8Qb-37" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-190" y="350" as="sourcePoint" />
+            <mxPoint x="-400" y="350" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nwdlHVP9liw4pfbZf8Qb-38" value="ERROR" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="-335" y="318" width="70" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="nwdlHVP9liw4pfbZf8Qb-39" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-400" y="400" as="sourcePoint" />
+            <mxPoint x="-400" y="420" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="-330" y="400" />
+              <mxPoint x="-330" y="420" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nwdlHVP9liw4pfbZf8Qb-40" value="Maneja ERROR" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="-360" y="368" width="110" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="nwdlHVP9liw4pfbZf8Qb-42" value="Muestra alerta &quot;Error al aprobar reseña&quot;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="-660" y="430" width="240" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="nwdlHVP9liw4pfbZf8Qb-61" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-400" y="460" as="sourcePoint" />
+            <mxPoint x="-720" y="460" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

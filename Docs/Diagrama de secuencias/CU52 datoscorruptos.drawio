@@ -1,0 +1,136 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:143.0) Gecko/20100101 Firefox/143.0" version="28.2.5">
+  <diagram name="Page-1" id="sdg7IwdbvmiSqQH_DbTc">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="X_8UZoLOrfVKO0hRBXwV-35" value="V_pagina-admin" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="170" y="70" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="X_8UZoLOrfVKO0hRBXwV-36" value="&lt;div&gt;C_revisar-admin&lt;/div&gt;&lt;div&gt;(route.ts)&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="560" y="70" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="X_8UZoLOrfVKO0hRBXwV-37" value="orders" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="900" y="70" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="X_8UZoLOrfVKO0hRBXwV-38" value="Actor" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="60" y="70" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="X_8UZoLOrfVKO0hRBXwV-39" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="X_8UZoLOrfVKO0hRBXwV-35" target="X_8UZoLOrfVKO0hRBXwV-35">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X_8UZoLOrfVKO0hRBXwV-40" value="" style="endArrow=none;dashed=1;html=1;dashPattern=1 3;strokeWidth=2;rounded=0;entryX=0.5;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" target="X_8UZoLOrfVKO0hRBXwV-38">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="75" y="640" as="sourcePoint" />
+            <mxPoint x="97" y="200" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="X_8UZoLOrfVKO0hRBXwV-41" value="" style="endArrow=none;dashed=1;html=1;dashPattern=1 3;strokeWidth=2;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" target="X_8UZoLOrfVKO0hRBXwV-36">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="620" y="640" as="sourcePoint" />
+            <mxPoint x="860" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="X_8UZoLOrfVKO0hRBXwV-42" value="" style="endArrow=none;dashed=1;html=1;dashPattern=1 3;strokeWidth=2;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" target="X_8UZoLOrfVKO0hRBXwV-37">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="960" y="640" as="sourcePoint" />
+            <mxPoint x="1030" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="X_8UZoLOrfVKO0hRBXwV-44" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="80" y="190" as="sourcePoint" />
+            <mxPoint x="230" y="190" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="X_8UZoLOrfVKO0hRBXwV-45" value="Clic en confirmar pedido" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" connectable="0" vertex="1" parent="X_8UZoLOrfVKO0hRBXwV-44">
+          <mxGeometry x="-0.1758" y="4" relative="1" as="geometry">
+            <mxPoint x="8" y="-6" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="X_8UZoLOrfVKO0hRBXwV-46" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="230" y="240" as="sourcePoint" />
+            <mxPoint x="420" y="240" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="X_8UZoLOrfVKO0hRBXwV-47" value="Clic en moderar reviews" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="250" y="208" width="150" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="X_8UZoLOrfVKO0hRBXwV-48" value="V_revisar-reviews" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="360" y="70" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="X_8UZoLOrfVKO0hRBXwV-49" value="" style="endArrow=none;dashed=1;html=1;dashPattern=1 3;strokeWidth=2;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" target="X_8UZoLOrfVKO0hRBXwV-48">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="420" y="640" as="sourcePoint" />
+            <mxPoint x="450" y="270" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="X_8UZoLOrfVKO0hRBXwV-50" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="420" y="270" as="sourcePoint" />
+            <mxPoint x="620" y="270" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="X_8UZoLOrfVKO0hRBXwV-51" value="GET/api/revisar-admin()" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="425" y="238" width="150" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="X_8UZoLOrfVKO0hRBXwV-52" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="620" y="300" as="sourcePoint" />
+            <mxPoint x="960" y="300" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="X_8UZoLOrfVKO0hRBXwV-53" value="SELECT * FROM reviews WHERE aprovado = false" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="640" y="268" width="300" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="X_8UZoLOrfVKO0hRBXwV-54" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="960" y="360" as="sourcePoint" />
+            <mxPoint x="620" y="360" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="X_8UZoLOrfVKO0hRBXwV-55" value="NULL" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="777" y="330" width="50" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="X_8UZoLOrfVKO0hRBXwV-56" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="620" y="390" as="sourcePoint" />
+            <mxPoint x="420" y="390" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="X_8UZoLOrfVKO0hRBXwV-57" value="{ reviews }" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="460" y="350" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="X_8UZoLOrfVKO0hRBXwV-66" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="420" y="480" as="sourcePoint" />
+            <mxPoint x="75" y="480" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="X_8UZoLOrfVKO0hRBXwV-67" value="Muestra&quot; Todas las reseñas han sido revisadas y moderadas&quot;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="75" y="450" width="350" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="X_8UZoLOrfVKO0hRBXwV-72" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="420" y="420" as="sourcePoint" />
+            <mxPoint x="420" y="430" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="460" y="420" />
+              <mxPoint x="460" y="430" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="X_8UZoLOrfVKO0hRBXwV-73" value="Valida reviews.length === 0" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="415" y="400" width="170" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="X_8UZoLOrfVKO0hRBXwV-74" value="" style="endArrow=none;dashed=1;html=1;dashPattern=1 3;strokeWidth=2;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" target="X_8UZoLOrfVKO0hRBXwV-35">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="230" y="640" as="sourcePoint" />
+            <mxPoint x="400" y="490" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,163 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:143.0) Gecko/20100101 Firefox/143.0" version="28.2.5">
+  <diagram name="Page-1" id="ywVrqC54R1aIYAm6DDOV">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="pz0QGih9JB1j3TMJtRA--1" value="V_pagina-admin" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="-670" y="40" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--2" value="&lt;div&gt;C_revisar-admin&lt;/div&gt;&lt;div&gt;(route.ts)&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="-300" y="40" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--3" value="reviews" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--4" value="Actor" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="-780" y="40" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="pz0QGih9JB1j3TMJtRA--1" target="pz0QGih9JB1j3TMJtRA--1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--6" value="" style="endArrow=none;dashed=1;html=1;dashPattern=1 3;strokeWidth=2;rounded=0;entryX=0.5;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" target="pz0QGih9JB1j3TMJtRA--4">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-765" y="760" as="sourcePoint" />
+            <mxPoint x="-743" y="170" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--7" value="" style="endArrow=none;dashed=1;html=1;dashPattern=1 3;strokeWidth=2;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" target="pz0QGih9JB1j3TMJtRA--2">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-240" y="760" as="sourcePoint" />
+            <mxPoint y="370" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--8" value="" style="endArrow=none;dashed=1;html=1;dashPattern=1 3;strokeWidth=2;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" target="pz0QGih9JB1j3TMJtRA--3">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="100" y="760" as="sourcePoint" />
+            <mxPoint x="170" y="370" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--10" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-760" y="160" as="sourcePoint" />
+            <mxPoint x="-610" y="160" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--11" value="Clic en confirmar pedido" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" connectable="0" vertex="1" parent="pz0QGih9JB1j3TMJtRA--10">
+          <mxGeometry x="-0.1758" y="4" relative="1" as="geometry">
+            <mxPoint x="8" y="-6" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--12" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-610" y="210" as="sourcePoint" />
+            <mxPoint x="-440" y="210" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--13" value="Clic en moderar reviews" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="-595" y="180" width="150" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--44" value="V_revisar-reviews" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="-500" y="40" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--46" value="" style="endArrow=none;dashed=1;html=1;dashPattern=1 3;strokeWidth=2;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" target="pz0QGih9JB1j3TMJtRA--44">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-440" y="760" as="sourcePoint" />
+            <mxPoint x="-410" y="240" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--47" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-440" y="240" as="sourcePoint" />
+            <mxPoint x="-240" y="240" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--48" value="GET/api/revisar-admin()" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="-435" y="208" width="150" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--49" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-240" y="270" as="sourcePoint" />
+            <mxPoint x="100" y="270" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--50" value="SELECT * FROM reviews WHERE aprovado = false" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="-220" y="238" width="300" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--51" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="100" y="330" as="sourcePoint" />
+            <mxPoint x="-240" y="330" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--52" value="id, productId, texto, imagen, fecha, aprovado" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="-200" y="298" width="260" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--53" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-240" y="360" as="sourcePoint" />
+            <mxPoint x="-440" y="360" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--54" value="{ reviews }" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="-400" y="320" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--55" value="contentModeration" style="whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="-130" y="40" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--56" value="" style="endArrow=none;dashed=1;html=1;dashPattern=1 3;strokeWidth=2;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" target="pz0QGih9JB1j3TMJtRA--55">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-70" y="760" as="sourcePoint" />
+            <mxPoint x="-110" y="290" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--57" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-440" y="430" as="sourcePoint" />
+            <mxPoint x="-65" y="430" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--59" value="moderator.analyzeText(texto)" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="-425" y="400" width="180" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--60" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-70" y="470" as="sourcePoint" />
+            <mxPoint x="-70" y="490" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="-20" y="470" />
+              <mxPoint x="-20" y="490" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--61" value="ejecuta analisis" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="-70" y="438" width="110" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--62" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-70" y="530" as="sourcePoint" />
+            <mxPoint x="-440" y="530" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--63" value="{ ReviewAnalisis }" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="-220" y="490" width="120" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--66" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-440" y="560" as="sourcePoint" />
+            <mxPoint x="-760" y="560" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--68" value="Muestra reviews con analisis" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="-625" y="520" width="180" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="pz0QGih9JB1j3TMJtRA--69" value="" style="endArrow=none;dashed=1;html=1;dashPattern=1 3;strokeWidth=2;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" target="pz0QGih9JB1j3TMJtRA--1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-610" y="750" as="sourcePoint" />
+            <mxPoint x="-600" y="280" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
