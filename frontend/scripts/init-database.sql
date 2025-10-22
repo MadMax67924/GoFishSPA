@@ -103,13 +103,37 @@ CREATE TABLE IF NOT EXISTS contacts (
 );
 
 -- Índices para mejorar el rendimiento
-CREATE INDEX idx_products_category ON products(category);
-CREATE INDEX idx_products_featured ON products(featured);
-CREATE INDEX idx_products_price ON products(price);
-CREATE INDEX idx_orders_status ON orders(status);
-CREATE INDEX idx_orders_created_at ON orders(created_at);
-CREATE INDEX idx_cart_items_cart_id ON cart_items(cart_id);
-CREATE INDEX idx_order_items_order_id ON order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
+CREATE INDEX IF NOT EXISTS idx_products_featured ON products(featured);
+CREATE INDEX IF NOT EXISTS idx_products_price ON products(price);
+CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
+CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at);
+CREATE INDEX IF NOT EXISTS idx_cart_items_cart_id ON cart_items(cart_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
+
+-- Tabla para historial de precios
+CREATE TABLE IF NOT EXISTS price_history (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    date_recorded TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    INDEX idx_product_date (product_id, date_recorded)
+);
+
+-- Trigger para guardar automáticamente cambios de precio
+DROP TRIGGER IF EXISTS price_change_trigger;
+DELIMITER //
+CREATE TRIGGER price_change_trigger
+    AFTER UPDATE ON products
+    FOR EACH ROW
+BEGIN
+    IF OLD.price != NEW.price THEN
+        INSERT INTO price_history (product_id, price) 
+        VALUES (NEW.id, NEW.price);
+    END IF;
+END//
+DELIMITER ;
 
 -- Insertar datos de ejemplo
 INSERT IGNORE INTO products (name, description, price, image, category, stock, featured) VALUES
@@ -125,5 +149,19 @@ INSERT IGNORE INTO products (name, description, price, image, category, stock, f
 -- Insertar usuario administrador de ejemplo
 INSERT IGNORE INTO users (name, email, password, role) VALUES
 ('Administrador GoFish', 'admin@gofish.cl', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin');
+
+-- Poblar algunos datos históricos de ejemplo
+INSERT IGNORE INTO price_history (product_id, price, date_recorded) VALUES
+(1, 10990, DATE_SUB(NOW(), INTERVAL 45 DAY)),
+(1, 9890, DATE_SUB(NOW(), INTERVAL 30 DAY)),
+(1, 9490, DATE_SUB(NOW(), INTERVAL 15 DAY)),
+(1, 8990, DATE_SUB(NOW(), INTERVAL 7 DAY)),
+(2, 6490, DATE_SUB(NOW(), INTERVAL 20 DAY)),
+(2, 5990, DATE_SUB(NOW(), INTERVAL 10 DAY)),
+(3, 7490, DATE_SUB(NOW(), INTERVAL 25 DAY)),
+(3, 6490, DATE_SUB(NOW(), INTERVAL 12 DAY));
+
+-- Marcar algunos productos como agotados para probar
+UPDATE products SET stock = 0 WHERE id IN (1, 7);
 
 COMMIT;
