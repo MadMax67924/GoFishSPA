@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button"
 import { ShoppingCart, Eye, RefreshCw, Heart } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { useWishlist } from "@/contexts/wishlist-context"
-import PreOrderButton from "./pre-order-button" // ← NUEVA IMPORTACIÓN
+import PreOrderButton from "./pre-order-button"
+import QuoteButton from "./quote-button" // ← NUEVA IMPORTACIÓN
 
 interface Product {
   id: number
@@ -186,7 +187,9 @@ export default function ProductList() {
                 </div>
               )}
               {product.stock === 0 && (
-                <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded text-xs">Sin stock</div>
+                <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded text-xs">
+                  Agotado
+                </div>
               )}
             </div>
             <div className="p-6">
@@ -199,30 +202,51 @@ export default function ProductList() {
 
               <p className="text-gray-600 text-sm mb-3 line-clamp-2">{product.description}</p>
 
-              <div className="text-sm text-gray-500 mb-4">Stock disponible: {product.stock} kg</div>
-
-              {/* BOTONES ACTUALIZADOS - AMBOS SIEMPRE DISPONIBLES */}
-              <div className="flex gap-2">
-                {/* Botón Añadir al Carrito (stock inmediato) */}
-                <Button
-                  className="flex-1 bg-[#2a9d8f] hover:bg-[#21867a]"
-                  onClick={() => addToCart(product)}
-                >
-                  <ShoppingCart className="mr-2 h-4 w-4" />
-                  Añadir
-                </Button>
-
-                {/* Botón Pre-orden (siempre disponible) */}
-                <PreOrderButton 
-                  productId={product.id.toString()}
-                  productName={product.name}
-                  variant="outline"
-                  className="flex-1 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white"
-                />
+              <div className="text-sm text-gray-500 mb-4">
+                Stock disponible: {product.stock === 0 ? 'Agotado' : `${product.stock} kg`}
               </div>
 
-              {/* Botón Detalles */}
-              <div className="mt-2">
+              {/* SECCIÓN DE BOTONES ACTUALIZADA */}
+              <div className="space-y-2">
+                {product.stock === 0 ? (
+                  /* Producto agotado - Mostrar botón de cotización */
+                  <>
+                    <div className="bg-red-50 text-red-700 px-3 py-2 rounded-md text-sm text-center font-medium mb-2">
+                      Producto Agotado
+                    </div>
+                    <QuoteButton 
+                      productId={product.id} 
+                      productName={product.name}
+                    />
+                    {/* Pre-orden sigue disponible */}
+                    <PreOrderButton 
+                      productId={product.id.toString()}
+                      productName={product.name}
+                      variant="outline"
+                      className="w-full border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white"
+                    />
+                  </>
+                ) : (
+                  /* Producto con stock - Botones normales */
+                  <div className="flex gap-2">
+                    <Button
+                      className="flex-1 bg-[#2a9d8f] hover:bg-[#21867a]"
+                      onClick={() => addToCart(product)}
+                    >
+                      <ShoppingCart className="mr-2 h-4 w-4" />
+                      Añadir
+                    </Button>
+
+                    <PreOrderButton 
+                      productId={product.id.toString()}
+                      productName={product.name}
+                      variant="outline"
+                      className="flex-1 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white"
+                    />
+                  </div>
+                )}
+
+                {/* Botón Detalles - Siempre disponible */}
                 <Link href={`/productos/${product.id}`}>
                   <Button
                     variant="outline"
