@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { executeQuery } from "@/lib/mysql"
 import { validateEmail, generateSecureToken } from "@/lib/validation"
+import { sendPasswordResetEmail } from '@/lib/email'
 
 // Caso 8: Recuperar contraseña de Usuario
 export async function POST(request: Request) {
@@ -42,6 +43,15 @@ export async function POST(request: Request) {
       WHERE id = ?
     `
     await executeQuery(updateSql, [resetToken, tokenExpiry, user.id])
+
+    try {
+      await sendPasswordResetEmail(email, resetToken, user.name)
+      console.log('✅ Email de recuperación enviado a:', email)
+    } catch (emailError) {
+      console.error('❌ Error enviando email de recuperación:', emailError)
+      // No fallar la solicitud si el email falla
+    }
+
 
     // En un entorno real, aquí enviarías el correo con el enlace de recuperación
     // Por ahora, devolvemos el token para testing
