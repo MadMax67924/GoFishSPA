@@ -1,16 +1,71 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import { Button } from "@/components/ui";
-
 import { CheckCircle } from "lucide-react"
 
-export const metadata = {
-  title: "Pedido Confirmado | GoFish SpA",
-  description: "Tu pedido ha sido confirmado con éxito",
-}
-
 export default function OrderConfirmationPage() {
+  const searchParams = useSearchParams()
+  const [orderNumber, setOrderNumber] = useState("")
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const orderId = searchParams.get("order")
+    const sessionId = searchParams.get("session_id")
+    const paymentSuccess = searchParams.get("payment") === "success"
+
+    const verifyPayment = async () => {
+      try {
+        if (orderId && (paymentSuccess || sessionId)) {
+          // Actualizar el estado del pedido a "confirmed"
+          const updateResponse = await fetch("/api/orders/update-status", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              orderId: orderId,
+              status: "confirmed"
+            }),
+          })
+
+          if (updateResponse.ok) {
+            const data = await updateResponse.json()
+            setOrderNumber(data.orderNumber || `GF-${orderId}`)
+          }
+        }
+      } catch (error) {
+        console.error("Error verificando pago:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    verifyPayment()
+  }, [searchParams])
+
+  if (loading) {
+    return (
+      <>
+        <Header />
+        <main className="min-h-screen pt-24 pb-16">
+          <div className="container mx-auto px-4 max-w-3xl">
+            <div className="bg-white rounded-lg shadow-md p-8 text-center">
+              <div className="text-center py-12">
+                <p>Verificando tu pago...</p>
+              </div>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </>
+    )
+  }
+
   return (
     <>
       <Header />
@@ -31,7 +86,7 @@ export default function OrderConfirmationPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                 <div>
                   <p className="text-gray-600">Número de pedido:</p>
-                  <p className="font-medium">GF-{Math.floor(100000 + Math.random() * 900000)}</p>
+                  <p className="font-medium">{orderNumber || `GF-${Math.floor(100000 + Math.random() * 900000)}`}</p>
                 </div>
                 <div>
                   <p className="text-gray-600">Fecha:</p>
@@ -43,14 +98,14 @@ export default function OrderConfirmationPage() {
                 </div>
                 <div>
                   <p className="text-gray-600">Método de pago:</p>
-                  <p className="font-medium">Transferencia bancaria</p>
+                  <p className="font-medium">WebPay (Stripe)</p>
                 </div>
               </div>
             </div>
 
             <p className="mb-8">
-              Te hemos enviado un correo electrónico con los detalles de tu compra y las instrucciones para realizar el
-              pago. Si tienes alguna pregunta, no dudes en contactarnos.
+              Te hemos enviado un correo electrónico con los detalles de tu compra. 
+              Si tienes alguna pregunta, no dudes en contactarnos.
             </p>
 
             <div className="flex flex-col sm:flex-row justify-center gap-4">
