@@ -1,18 +1,14 @@
-import { NextResponse } from "next/server";
-import { executeQuery } from "@/lib/mysql";
-import { cookies } from "next/headers";
-import jwt from "jsonwebtoken";
+import { NextResponse } from "next/server"
+import { executeQuery } from "@/lib/mysql"
+//Extrae los datos asociados a la order_id de la base de datos mediante executeQuery 
+// y despues los retorna de manera ordenada
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-development-jwt-secret-key";
-
-// Obtener orden específica
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    const orderId = params.id;
-
-    // Verificar autenticación
-    const cookieStore = await cookies();
-    const token = cookieStore.get("authToken")?.value;
+    const orderId = params.id
 
     const orderSql = `
       SELECT 
@@ -25,78 +21,48 @@ export async function GET(request: Request, { params }: { params: { id: string }
       FROM orders o
       LEFT JOIN order_items oi ON o.id = oi.order_id
       WHERE o.id = ?
-    `;
+    `
 
-    const orders = await executeQuery(orderSql, [orderId]);
+    const orderResult = await executeQuery(orderSql, [orderId])
 
-    if (!Array.isArray(orders) || orders.length === 0) {
-      return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
+    if (!orderResult || (orderResult as any).length === 0) {
+      return NextResponse.json({ error: "Pedido no encontrado" }, { status: 404 })
     }
 
-    // Verificar que el usuario tenga acceso a esta orden
-    if (token) {
-      try {
-        const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
-        const order = orders[0] as any;
-        
-        if (order.user_id && order.user_id !== parseInt(decoded.userId)) {
-          return NextResponse.json({ error: "No autorizado" }, { status: 403 });
-        }
-      } catch (error) {
-        // Token inválido, pero permitir acceso si la orden no tiene usuario
-        const order = orders[0] as any;
-        if (order.user_id) {
-          return NextResponse.json({ error: "No autorizado" }, { status: 403 });
-        }
-      }
+    const orderRows = orderResult as any[]
+    const order = {
+      id: orderRows[0].id,
+      order_number: orderRows[0].order_number,
+      first_name: orderRows[0].first_name,
+      last_name: orderRows[0].last_name,
+      email: orderRows[0].email,
+      phone: orderRows[0].phone,
+      address: orderRows[0].address,
+      city: orderRows[0].city,
+      region: orderRows[0].region,
+      postal_code: orderRows[0].postal_code,
+      payment_method: orderRows[0].payment_method,
+      notes: orderRows[0].notes,
+      subtotal: orderRows[0].subtotal,
+      shipping: orderRows[0].shipping,
+      total: orderRows[0].total,
+      status: orderRows[0].status,
+      stripe_payment_intent_id: orderRows[0].stripe_payment_intent_id,
+      created_at: orderRows[0].created_at,
+      items: orderRows
+        .filter(row => row.product_id)
+        .map(row => ({
+          product_id: row.product_id,
+          name: row.product_name,
+          price: row.product_price,
+          quantity: row.quantity,
+          subtotal: row.item_subtotal
+        }))
     }
 
-    // Formatear respuesta
-    const orderData = {
-      id: orders[0].id,
-      order_number: orders[0].order_number,
-      status: orders[0].status,
-      total: orders[0].total,
-      created_at: orders[0].created_at,
-      items: orders.map((item: any) => ({
-        product_id: item.product_id,
-        product_name: item.product_name,
-        product_price: item.product_price,
-        quantity: item.quantity,
-        item_subtotal: item.item_subtotal,
-      }))
-    };
-
-    return NextResponse.json(orderData);
+    return NextResponse.json(order)
   } catch (error) {
-    console.error("Error obteniendo orden:", error);
-    return NextResponse.json({ error: "Error al obtener orden" }, { status: 500 });
-  }
-}
-
-// Actualizar orden (cancelar, etc.)
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
-  try {
-    const orderId = params.id;
-    const { status } = await request.json();
-
-    if (!status) {
-      return NextResponse.json({ error: "Estado requerido" }, { status: 400 });
-    }
-
-    const validStatuses = ['pending', 'paid', 'shipped', 'delivered', 'cancelled'];
-    if (!validStatuses.includes(status)) {
-      return NextResponse.json({ error: "Estado inválido" }, { status: 400 });
-    }
-
-    await executeQuery(
-      `UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-      [status, orderId]
-    );
-
-    return NextResponse.json({ success: true, message: "Orden actualizada" });
-  } catch (error) {
-    console.error("Error actualizando orden:", error);
-    return NextResponse.json({ error: "Error al actualizar orden" }, { status: 500 });
+    console.error("Error al obtener pedido:", error)
+    return NextResponse.json({ error: "Error al obtener pedido" }, { status: 500 })
   }
 }
