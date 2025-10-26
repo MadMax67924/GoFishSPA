@@ -1,32 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
-
-// Crear conexión a la base de datos
-async function getDbConnection() {
-  return await mysql.createConnection({
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'gofish',
-    port: parseInt(process.env.DB_PORT || '3306')
-  });
-}
+import { executeQuery } from "@/lib/mysql"
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  let connection;
-  
   try {
     const productId = parseInt(params.id);
-    connection = await getDbConnection();
-
-    // Obtener información del producto
-    const [productRows] = await connection.execute(
+    const productRows = await executeQuery(
       'SELECT name, price, stock, category FROM products WHERE id = ?',
       [productId]
     );
+
 
     const products = productRows as any[];
     
@@ -48,7 +33,7 @@ export async function GET(
     }
 
     // Obtener historial de precios de los últimos 6 meses
-    const [priceRows] = await connection.execute(`
+    const priceRows = await executeQuery(`
       SELECT price, date_recorded 
       FROM price_history 
       WHERE product_id = ? 
@@ -109,9 +94,5 @@ export async function GET(
       { error: 'Error interno del servidor' },
       { status: 500 }
     );
-  } finally {
-    if (connection) {
-      await connection.end();
-    }
-  }
+  } 
 }
