@@ -8,11 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "setup-db": "node scripts/setup-gofish-db.js",
-    "backup:run": "node scripts/backup/backup-database.js",
-    "backup:start": "node scripts/backup/backup-scheduler.js",
-    "backup:monitor": "node scripts/backup/backup-monitor.js",
-    "backup:manual": "node scripts/backup/backup-database.js",
-    "backup:status": "node scripts/backup/backup-monitor.js"
+    "health-check": "node scripts/health-check.js",
+    "export": "next build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
