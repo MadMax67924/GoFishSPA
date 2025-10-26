@@ -9,6 +9,11 @@
     "db:setup": "npm --prefix frontend run setup-db"
   },
   "dependencies": {
-    "class-variance-authority": "^0.7.1"
+    "@types/node-fetch": "^2.6.13",
+    "class-variance-authority": "^0.7.1",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.4"
   }
 }

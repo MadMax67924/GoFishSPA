@@ -8,7 +8,7 @@ const app = express();
 app.use(bodyParser.json());
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2022-11-15",
+  apiVersion: "2025-09-30.clover",
 });
 
 // Endpoint que el frontend llama para crear un PaymentIntent (ya deberías tener uno parecido)
