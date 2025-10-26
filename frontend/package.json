@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "setup-db": "node scripts/setup-gofish-db.js"
+    "setup-db": "node scripts/setup-gofish-db.js",
+    "health-check": "node scripts/health-check.js",
+    "export": "next build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
