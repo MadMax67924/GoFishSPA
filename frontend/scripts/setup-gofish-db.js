@@ -145,6 +145,7 @@ async function setupDatabase() {
           shipping DECIMAL(10, 2) NOT NULL DEFAULT 0,
           total DECIMAL(10, 2) NOT NULL,
           status ENUM('pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled') DEFAULT 'pending',
+          stripe_payment_intent_id VARCHAR(255) NULL,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
           FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
@@ -232,6 +233,7 @@ async function setupDatabase() {
       await connection.execute("CREATE INDEX IF NOT EXISTS idx_cart_items_cart_id ON cart_items(cart_id)")
       await connection.execute("CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id)")
       await connection.execute("CREATE INDEX IF NOT EXISTS idx_sugerencias_fecha ON sugerencias(fecha)")
+      await connection.execute("CREATE INDEX IF NOT EXISTS idx_stripe_payment_intent_id ON orders(stripe_payment_intent_id)")
       console.log(" Índices creados correctamente")
     } catch (error) {
       console.log(" Los índices ya existen o hubo un error al crearlos:", error.message)
