@@ -181,6 +181,66 @@ CREATE TABLE IF NOT EXISTS user_cards (
     INDEX idx_user_cards_active (is_active)
 );
 
+-- =============================================================================
+-- TABLAS PARA COMPRAS RECURRENTES (Caso de uso Nº62)
+-- =============================================================================
+
+-- Tabla de suscripciones/recurrencias
+CREATE TABLE IF NOT EXISTS recurring_orders (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    user_id INT NOT NULL,
+    product_id INT NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    
+    -- Configuración de recurrencia
+    frequency ENUM('weekly', 'biweekly', 'monthly') NOT NULL,
+    interval_value INT DEFAULT 1, -- Cada 1 semana, 2 semanas, etc.
+    
+    -- Próxima ejecución
+    next_delivery_date DATE NOT NULL,
+    
+    -- Información de envío y pago
+    shipping_address JSON NOT NULL,
+    payment_method VARCHAR(100) NOT NULL,
+    card_token VARCHAR(255) NULL, -- Tarjeta guardada para pagos automáticos
+    
+    -- Estado y configuración
+    status ENUM('active', 'paused', 'cancelled') DEFAULT 'active',
+    max_occurrences INT NULL, -- Límite de repeticiones (NULL = infinito)
+    occurrences_count INT DEFAULT 0,
+    
+    -- Metadatos
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    last_processed_at TIMESTAMP NULL,
+    
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    
+    INDEX idx_recurring_orders_user_id (user_id),
+    INDEX idx_recurring_orders_status (status),
+    INDEX idx_recurring_orders_next_delivery (next_delivery_date),
+    INDEX idx_recurring_orders_active (status, next_delivery_date)
+);
+
+-- Tabla de historial de órdenes recurrentes procesadas
+CREATE TABLE IF NOT EXISTS recurring_order_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    recurring_order_id VARCHAR(36) NOT NULL,
+    order_id INT NOT NULL,
+    processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('success', 'failed') NOT NULL,
+    error_message TEXT NULL,
+    
+    FOREIGN KEY (recurring_order_id) REFERENCES recurring_orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    
+    INDEX idx_recurring_logs_recurring_id (recurring_order_id),
+    INDEX idx_recurring_logs_processed_at (processed_at)
+);
+
+COMMIT;
+
 -- Agregar campos de Mercado Pago a la tabla orders
 ALTER TABLE orders 
 ADD COLUMN IF NOT EXISTS payment_id VARCHAR(255) NULL,

@@ -5,9 +5,10 @@ import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Trash2, Plus, Minus, ShoppingCart, Package } from "lucide-react" // ← NUEVO ICONO
+import { Trash2, Plus, Minus, ShoppingCart, Package, RotateCcw } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useRouter } from "next/navigation"
 
 interface CartItem {
   id: string
@@ -16,7 +17,7 @@ interface CartItem {
   price: number
   image: string
   quantity: number
-  isPreOrder?: boolean // ← NUEVO CAMPO
+  isPreOrder?: boolean
 }
 
 export default function CartItems() {
@@ -24,6 +25,7 @@ export default function CartItems() {
   const [loading, setLoading] = useState(true)
   const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set())
   const { toast } = useToast()
+  const router = useRouter()
 
   const fetchCart = async () => {
     setLoading(true)
@@ -47,7 +49,6 @@ export default function CartItems() {
   useEffect(() => {
     fetchCart()
 
-    // Escuchar eventos de actualización del carrito
     const handleCartUpdate = () => {
       setTimeout(() => {
         fetchCart()
@@ -63,7 +64,6 @@ export default function CartItems() {
     }
   }, [])
 
-  // CU26: Modificar cantidad en el carrito
   const updateQuantity = async (itemId: string, newQuantity: number) => {
     if (newQuantity < 1) {
       removeItem(itemId)
@@ -71,8 +71,6 @@ export default function CartItems() {
     }
 
     setUpdatingItems((prev) => new Set(prev).add(itemId))
-
-    // Actualización optimista del estado local PRIMERO
     setCartItems(cartItems.map((item) => (item.id === itemId ? { ...item, quantity: newQuantity } : item)))
 
     try {
@@ -85,7 +83,6 @@ export default function CartItems() {
       })
 
       if (!response.ok) {
-        // Si falla, revertir el cambio optimista
         await fetchCart()
         throw new Error("Error al actualizar cantidad")
       }
@@ -95,7 +92,6 @@ export default function CartItems() {
         description: "La cantidad del producto ha sido actualizada",
       })
 
-      // Disparar evento para actualizar otros componentes
       window.dispatchEvent(new CustomEvent("cartUpdated"))
     } catch (error) {
       console.error("Error al actualizar cantidad:", error)
@@ -120,11 +116,8 @@ export default function CartItems() {
     }
   }
 
-  // CU27: Eliminar producto del carrito
   const removeItem = async (itemId: string) => {
     setUpdatingItems((prev) => new Set(prev).add(itemId))
-
-    // Actualización optimista del estado local PRIMERO
     setCartItems(cartItems.filter((item) => item.id !== itemId))
 
     try {
@@ -133,7 +126,6 @@ export default function CartItems() {
       })
 
       if (!response.ok) {
-        // Si falla, recargar desde la API
         await fetchCart()
         throw new Error("Error al eliminar producto")
       }
@@ -143,7 +135,6 @@ export default function CartItems() {
         description: "El producto ha sido eliminado del carrito",
       })
 
-      // Disparar evento para actualizar otros componentes
       window.dispatchEvent(new CustomEvent("cartUpdated"))
     } catch (error) {
       console.error("Error al eliminar producto:", error)
@@ -165,10 +156,7 @@ export default function CartItems() {
     if (!confirm("¿Estás seguro de que quieres vaciar el carrito?")) return
 
     try {
-      // Actualizar estado local PRIMERO para feedback inmediato
       setCartItems([])
-
-      // Usar el endpoint específico para limpiar completamente
       const response = await fetch("/api/cart/clear", {
         method: "DELETE",
       })
@@ -177,14 +165,9 @@ export default function CartItems() {
         throw new Error("Error al vaciar carrito")
       }
 
-      const result = await response.json()
-      console.log("Carrito limpiado:", result)
-
-      // Disparar múltiples eventos para asegurar sincronización completa
       window.dispatchEvent(new CustomEvent("cartCleared"))
       window.dispatchEvent(new CustomEvent("cartUpdated"))
 
-      // Forzar actualización después de un pequeño delay
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent("cartUpdated"))
       }, 100)
@@ -195,13 +178,30 @@ export default function CartItems() {
       })
     } catch (error) {
       console.error("Error al vaciar carrito:", error)
-      // Si hay error, recargar desde la API
       await fetchCart()
       toast({
         title: "Error",
         description: "No se pudo vaciar el carrito completamente",
         variant: "destructive",
       })
+    }
+  }
+
+  // Función para manejar compra recurrente desde carrito vacío
+  const handleRecurringOrderFromEmptyCart = async () => {
+    try {
+      // Verificar si el usuario está autenticado
+      const authCheck = await fetch("/api/auth/check");
+      if (!authCheck.ok) {
+        router.push("/login");
+        return;
+      }
+
+      // Redirigir a página de órdenes recurrentes o mostrar modal
+      router.push("/recurring-orders");
+    } catch (error) {
+      console.error("Error checking auth:", error);
+      router.push("/login");
     }
   }
 
@@ -223,9 +223,23 @@ export default function CartItems() {
           <ShoppingCart className="h-16 w-16 mx-auto text-gray-400 mb-4" />
           <h2 className="text-xl font-semibold mb-4">Tu carrito está vacío</h2>
           <p className="text-gray-600 mb-6">Añade algunos productos para comenzar tu compra</p>
-          <Link href="/productos">
-            <Button className="bg-[#005f73] hover:bg-[#003d4d]">Ver productos</Button>
-          </Link>
+          <div className="space-y-3">
+            <Link href="/productos" className="block">
+              <Button className="bg-[#005f73] hover:bg-[#003d4d] w-full">
+                Ver productos
+              </Button>
+            </Link>
+            
+            {/* BOTÓN DE COMPRA RECURRENTE EN CARRITO VACÍO */}
+            <Button
+              onClick={handleRecurringOrderFromEmptyCart}
+              variant="outline"
+              className="w-full border-green-200 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800"
+            >
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Programar Compra Recurrente
+            </Button>
+          </div>
         </CardContent>
       </Card>
     )
@@ -253,7 +267,6 @@ export default function CartItems() {
                 item.isPreOrder ? 'bg-orange-50 border-orange-200' : 'bg-white'
               }`}
             >
-              {/* Imagen del producto */}
               <div className="relative h-16 w-16 flex-shrink-0">
                 <Image src={item.image || "/placeholder.svg"} alt={item.name} fill className="object-cover rounded" />
                 {item.isPreOrder && (
@@ -263,7 +276,6 @@ export default function CartItems() {
                 )}
               </div>
 
-              {/* Información del producto */}
               <div className="flex-grow min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <Link
@@ -286,7 +298,6 @@ export default function CartItems() {
                 )}
               </div>
 
-              {/* Controles de cantidad - CU26 */}
               <div className="flex items-center gap-2">
                 <Button
                   type="button"
@@ -322,12 +333,10 @@ export default function CartItems() {
                 <span className="text-sm text-gray-500 ml-1">kg</span>
               </div>
 
-              {/* Subtotal */}
               <div className="text-right min-w-0">
                 <p className="font-medium">${(item.price * item.quantity).toLocaleString()}</p>
               </div>
 
-              {/* Botón eliminar - CU27 */}
               <Button
                 variant="ghost"
                 size="icon"
