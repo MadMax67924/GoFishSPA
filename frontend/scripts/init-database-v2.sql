@@ -239,7 +239,6 @@ CREATE TABLE IF NOT EXISTS recurring_order_logs (
     INDEX idx_recurring_logs_processed_at (processed_at)
 );
 
-COMMIT;
 
 -- Agregar campos de Mercado Pago a la tabla orders
 ALTER TABLE orders 
@@ -274,5 +273,31 @@ CREATE TABLE IF NOT EXISTS payment_logs (
 CREATE INDEX IF NOT EXISTS idx_orders_payment_status ON orders(payment_status);
 CREATE INDEX IF NOT EXISTS idx_orders_payment_id ON orders(payment_id);
 CREATE INDEX IF NOT EXISTS idx_orders_mercado_pago_preference ON orders(mercado_pago_preference_id);
+
+-- =============================================================================
+-- CAMPOS PARA BOLETA/FACTURA (Caso de uso N°41)
+-- =============================================================================
+
+-- Agregar campos de documento fiscal a la tabla orders
+ALTER TABLE orders 
+ADD COLUMN IF NOT EXISTS document_type ENUM('boleta', 'factura') DEFAULT 'boleta',
+ADD COLUMN IF NOT EXISTS rut VARCHAR(12) NULL,
+ADD COLUMN IF NOT EXISTS business_name VARCHAR(255) NULL,
+ADD COLUMN IF NOT EXISTS document_generated BOOLEAN DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS document_url VARCHAR(500) NULL;
+
+-- Tabla para logs de generación de documentos
+CREATE TABLE IF NOT EXISTS document_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    document_type ENUM('boleta', 'factura') NOT NULL,
+    document_number VARCHAR(50) NOT NULL,
+    generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    download_url VARCHAR(500) NULL,
+    sent_via_email BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    INDEX idx_document_logs_order_id (order_id),
+    INDEX idx_document_logs_document_number (document_number)
+);
 
 COMMIT;
