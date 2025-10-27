@@ -108,13 +108,15 @@ export default function CheckoutForm() {
     try {
       const res = await fetch("/api/cart")
       if (!res.ok) throw new Error("Error al cargar el resumen del carrito")
-      
+    
       const cart = await res.json()
       const items = cart.items || []
-      
+    
       const subtotal = items.reduce((acc: number, item: any) => acc + item.price * item.quantity, 0)
       const shipping = subtotal > 30000 ? 0 : 5000
       const total = subtotal + shipping
+
+      const shouldRedirectToWhatsapp = total < 20000 && formData.region !== "Valparaíso"
 
       const orderData = {
         ...formData,
@@ -122,7 +124,8 @@ export default function CheckoutForm() {
         subtotal,
         shipping,
         total,
-        status: formData.paymentMethod === "webpay" ? "pending" : "confirmed"
+        status: shouldRedirectToWhatsapp ? "pending" : 
+                formData.paymentMethod === "webpay" ? "pending" : "confirmed"
       }
 
       const response = await fetch("/api/orders", {
@@ -139,26 +142,56 @@ export default function CheckoutForm() {
         throw new Error(data.error || "Error al procesar el pedido")
       }
 
-      if (formData.paymentMethod === "webpay" ) {
+      if (shouldRedirectToWhatsapp) {
         toast({
-          title: "Pedido creado",
-          description: "Redirigiendo a la pasarela de pago...",
+          title: "Redirigiendo a WhatsApp",
+          description: "Tu pedido requiere confirmación adicional.",
         })
-        
-        router.push(`/checkout/payment?orderId=${data.orderId}`)
+      
+        router.push(`/redireccion-whattsap?order=${data.orderId}`)
         return
       }
 
+      if (formData.paymentMethod === "webpay") {
+        const completeOrderData = {
+          ...orderData,
+          id: data.orderId, 
+          order_number: data.orderNumber,
+          items: items 
+        }
+
       toast({
-        title: "¡Pedido realizado con éxito!",
-        description: `Número de pedido: ${data.orderNumber}`,
+        title: "Creando sesión de pago",
+        description: "Estamos preparando tu checkout seguro...",
       })
 
-      if (total < 30000 && formData.region !== "Valparaíso") {
-        router.push(`/redireccion-whattsap?order=${data.orderId}`)
-      } else {
-        router.push(`/checkout/confirmacion?order=${data.orderNumber}`)
+      const paymentIntentRes = await fetch("/api/payment-intent", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          orderData: completeOrderData
+        }),
+      })
+
+      const paymentData = await paymentIntentRes.json()
+      
+      if (!paymentIntentRes.ok) {
+        throw new Error(paymentData.error || "Error al crear la sesión de pago")
       }
+
+      window.location.href = paymentData.checkoutUrl
+      return
+    }
+
+    toast({
+      title: "¡Pedido realizado con éxito!",
+      description: `Número de pedido: ${data.orderNumber}`,
+    })
+
+    router.push(`/checkout/confirmacion?order=${data.orderNumber}`)
+    
     } catch (error: any) {
       console.error("Error al procesar el pedido:", error)
       toast({
