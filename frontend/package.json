@@ -7,7 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "setup-db": "node scripts/setup-gofish-db.js"
+    "setup-db": "node scripts/setup-gofish-db.js",
+    "backup:run": "node scripts/backup/backup-database.js",
+    "backup:start": "node scripts/backup/backup-scheduler.js",
+    "backup:monitor": "node scripts/backup/backup-monitor.js",
+    "backup:manual": "node scripts/backup/backup-database.js",
+    "backup:status": "node scripts/backup/backup-monitor.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -40,6 +45,7 @@
     "@radix-ui/react-tooltip": "1.1.6",
     "autoprefixer": "^10.4.20",
     "bcryptjs": "latest",
+    "check-disk-space": "^3.1.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
@@ -53,6 +59,7 @@
     "mysql2": "latest",
     "next": "15.2.4",
     "next-themes": "latest",
+    "node-cron": "^3.0.3",
     "pdf-lib": "^1.17.1",
     "react": "^18.3.1",
     "react-day-picker": "^9.1.3",

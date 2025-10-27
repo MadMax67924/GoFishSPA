@@ -9,7 +9,9 @@
     "db:setup": "npm --prefix frontend run setup-db"
   },
   "dependencies": {
+    "check-disk-space": "^3.4.0",
     "mercadopago": "^2.9.0",
+    "node-cron": "^4.2.1",
     "pdf-lib": "^1.17.1"
   }
 }
