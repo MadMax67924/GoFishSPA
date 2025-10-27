@@ -1,4 +1,4 @@
-name: Verificar que el código funciona
+name: CI - Verificación y Build Automático
 
 on:
   push:
@@ -9,6 +9,7 @@ on:
 jobs:
   verificar:
     runs-on: ubuntu-latest
+    name: 🧪 Verificar Código
     
     steps:
     - name: 📥 Descargar el código
@@ -18,16 +19,33 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
     
     - name: 📦 Instalar dependencias
       run: |
         cd frontend
-        npm install
+        npm ci
+    
+    - name: 🔍 Verificar sintaxis
+      run: |
+        cd frontend
+        npm run lint --if-present
     
     - name: 🔨 Verificar que compila
       run: |
         cd frontend
         npm run build
     
-    - name: ✅ Todo funcionó
-      run: echo "¡El código está bien! 🎉"
+    - name: 📊 Generar reporte de build
+      run: |
+        echo "✅ Build completado exitosamente"
+        echo "📦 Aplicación lista para despliegue"
+        echo "🚀 Lista para CI/CD completo"
+    
+    - name: 💾 Guardar build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-files
+        path: frontend/.next/
+        retention-days: 1
