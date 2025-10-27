@@ -1,0 +1,33 @@
+name: Verificar que el código funciona
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Descargar el código
+      uses: actions/checkout@v4
+    
+    - name: ⚙️ Configurar Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    
+    - name: 📦 Instalar dependencias
+      run: |
+        cd frontend
+        npm install
+    
+    - name: 🔨 Verificar que compila
+      run: |
+        cd frontend
+        npm run build
+    
+    - name: ✅ Todo funcionó
+      run: echo "¡El código está bien! 🎉"
