@@ -237,7 +237,7 @@ export default function CartItems() {
               className="w-full border-green-200 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800"
             >
               <RotateCcw className="h-4 w-4 mr-2" />
-              Programar Compra Recurrente
+              Compra Recurrente
             </Button>
           </div>
         </CardContent>
