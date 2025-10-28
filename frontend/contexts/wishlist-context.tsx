@@ -1,120 +1,237 @@
 "use client"
-
-import type React from "react"
-import { createContext, useContext, useEffect, useState, useCallback } from "react"
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 
 interface WishlistItem {
   id: number
   name: string
   price: number
-  image: string
-  category: string
-  description: string
-  stock: number
+  image?: string
+  product_id?: number // Solo para items de DB
+  user_id?: number    // Solo para items de DB
+  created_at?: string // Solo para items de DB
 }
 
 interface WishlistContextType {
   items: WishlistItem[]
   itemCount: number
-  addToWishlist: (product: WishlistItem) => void
-  removeFromWishlist: (productId: number) => void
-  clearWishlist: () => void
+  addToWishlist: (product: any) => Promise<void>
+  removeFromWishlist: (productId: number) => Promise<void>
   isInWishlist: (productId: number) => boolean
+  loading: boolean
+  error: string | null
+  isLoggedIn: boolean
 }
 
 const WishlistContext = createContext<WishlistContextType | undefined>(undefined)
 
-const WISHLIST_STORAGE_KEY = 'gofish-wishlist'
-
-export function WishlistProvider({ children }: { children: React.ReactNode }) {
+export function WishlistProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<WishlistItem[]>([])
-  const [isClient, setIsClient] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
 
-  // Indicar que estamos en el cliente
+  // Verificar si el usuario está logueado
   useEffect(() => {
-    setIsClient(true)
+    checkAuthStatus()
   }, [])
 
-  // Cargar wishlist desde localStorage al inicializar
+  // Cargar wishlist cuando cambia el estado de auth
   useEffect(() => {
-    if (isClient) {
-      try {
-        const stored = localStorage.getItem(WISHLIST_STORAGE_KEY)
-        if (stored) {
-          setItems(JSON.parse(stored))
+    if (isLoggedIn) {
+      loadWishlistFromDB()
+    } else {
+      loadWishlistFromLocalStorage()
+    }
+  }, [isLoggedIn])
+
+  const checkAuthStatus = () => {
+    // TODO: Implementar verificación real de autenticación
+    // Por ahora, simular con localStorage o JWT
+    const token = localStorage.getItem('authToken')
+    setIsLoggedIn(!!token)
+  }
+
+  // CARGAR desde LocalStorage (usuario no logueado)
+  const loadWishlistFromLocalStorage = () => {
+    try {
+      const stored = localStorage.getItem('gofish-wishlist')
+      const parsedItems = stored ? JSON.parse(stored) : []
+      setItems(parsedItems)
+    } catch (error) {
+      console.error('Error loading from localStorage:', error)
+      setItems([])
+    }
+  }
+
+  // CARGAR desde Base de Datos (usuario logueado)
+  const loadWishlistFromDB = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/wishlist')
+      
+      if (!response.ok) {
+        throw new Error('Error al cargar lista de deseos')
+      }
+      
+      const data = await response.json()
+      setItems(data.wishlist || [])
+    } catch (err) {
+      console.error('Error loading wishlist from DB:', err)
+      setError(err instanceof Error ? err.message : 'Error desconocido')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // MIGRAR LocalStorage → Base de Datos (cuando el usuario se loguea)
+  const migrateLocalStorageToDB = async () => {
+    try {
+      const localItems = localStorage.getItem('gofish-wishlist')
+      if (!localItems) return
+
+      const parsedItems = JSON.parse(localItems)
+      
+      // Enviar cada item a la base de datos
+      for (const item of parsedItems) {
+        try {
+          await fetch('/api/wishlist', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId: item.id }),
+          })
+        } catch (error) {
+          console.error('Error migrating item:', item.id, error)
         }
-      } catch (error) {
-        console.error("Error loading wishlist from localStorage:", error)
       }
+      
+      // Limpiar localStorage después de migrar
+      localStorage.removeItem('gofish-wishlist')
+      
+      // Recargar desde DB
+      await loadWishlistFromDB()
+    } catch (error) {
+      console.error('Error migrating to DB:', error)
     }
-  }, [isClient])
+  }
 
-  // Guardar en localStorage cada vez que cambie la lista
-  useEffect(() => {
-    if (isClient && items.length >= 0) {
-      try {
-        localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(items))
-      } catch (error) {
-        console.error("Error saving wishlist to localStorage:", error)
+  const addToWishlist = async (product: any) => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      if (isLoggedIn) {
+        // USUARIO LOGUEADO: Guardar en base de datos
+        const response = await fetch('/api/wishlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId: product.id }),
+        })
+        
+        if (!response.ok) {
+          throw new Error('Error al agregar producto')
+        }
+        
+        await loadWishlistFromDB()
+      } else {
+        // USUARIO NO LOGUEADO: Guardar en localStorage
+        const newItem: WishlistItem = {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          image: product.image
+        }
+        
+        const updatedItems = [...items, newItem]
+        setItems(updatedItems)
+        localStorage.setItem('gofish-wishlist', JSON.stringify(updatedItems))
       }
+    } catch (err) {
+      console.error('Error adding to wishlist:', err)
+      setError(err instanceof Error ? err.message : 'Error al agregar producto')
+      throw err
+    } finally {
+      setLoading(false)
     }
-  }, [items, isClient])
+  }
 
-  const itemCount = items.length
+  const removeFromWishlist = async (productId: number) => {
+    try {
+      setLoading(true)
+      setError(null)
 
-  // Añadir a favoritos
-  const addToWishlist = useCallback((product: WishlistItem) => {
-    setItems(prevItems => {
-      // Verificar si ya existe
-      const exists = prevItems.some(item => item.id === product.id)
-      if (exists) {
-        return prevItems // No añadir duplicados
+      if (isLoggedIn) {
+        // USUARIO LOGUEADO: Eliminar de base de datos
+        const response = await fetch(`/api/wishlist/${productId}`, {
+          method: 'DELETE',
+        })
+        
+        if (!response.ok) {
+          throw new Error('Error al eliminar producto')
+        }
+        
+        setItems(prevItems => prevItems.filter(item => 
+          (item.product_id || item.id) !== productId
+        ))
+      } else {
+        // USUARIO NO LOGUEADO: Eliminar de localStorage
+        const updatedItems = items.filter(item => item.id !== productId)
+        setItems(updatedItems)
+        localStorage.setItem('gofish-wishlist', JSON.stringify(updatedItems))
       }
-      const newItems = [...prevItems, product]
-      // Disparar evento personalizado para actualizar otros componentes
-      window.dispatchEvent(new CustomEvent("wishlistUpdated"))
-      return newItems
-    })
-  }, [])
+    } catch (err) {
+      console.error('Error removing from wishlist:', err)
+      setError(err instanceof Error ? err.message : 'Error al eliminar producto')
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  // Eliminar de favoritos
-  const removeFromWishlist = useCallback((productId: number) => {
-    setItems(prevItems => {
-      const newItems = prevItems.filter(item => item.id !== productId)
-      // Disparar evento personalizado para actualizar otros componentes
-      window.dispatchEvent(new CustomEvent("wishlistUpdated"))
-      return newItems
-    })
-  }, [])
+  const isInWishlist = (productId: number): boolean => {
+    if (isLoggedIn) {
+      return items.some(item => (item.product_id || item.id) === productId)
+    } else {
+      return items.some(item => item.id === productId)
+    }
+  }
 
-  // Limpiar lista de deseos
-  const clearWishlist = useCallback(() => {
+  // Función para llamar cuando el usuario se loguea
+  const onUserLogin = async () => {
+    setIsLoggedIn(true)
+    await migrateLocalStorageToDB()
+  }
+
+  // Función para llamar cuando el usuario se desloguea
+  const onUserLogout = () => {
+    setIsLoggedIn(false)
     setItems([])
-    // Disparar evento personalizado para actualizar otros componentes
-    window.dispatchEvent(new CustomEvent("wishlistUpdated"))
-  }, [])
-
-  // Verificar si un producto está en favoritos
-  const isInWishlist = useCallback((productId: number) => {
-    return items.some(item => item.id === productId)
-  }, [items])
+    loadWishlistFromLocalStorage()
+  }
 
   const value: WishlistContextType = {
     items,
-    itemCount,
+    itemCount: items.length,
     addToWishlist,
     removeFromWishlist,
-    clearWishlist,
     isInWishlist,
+    loading,
+    error,
+    isLoggedIn
   }
 
-  return <WishlistContext.Provider value={value}>{children}</WishlistContext.Provider>
+  return (
+    <WishlistContext.Provider value={value}>
+      {children}
+    </WishlistContext.Provider>
+  )
 }
 
 export function useWishlist() {
   const context = useContext(WishlistContext)
   if (context === undefined) {
-    throw new Error("useWishlist must be used within a WishlistProvider")
+    throw new Error('useWishlist debe ser usado dentro de un WishlistProvider')
   }
   return context
 }
+
+// Exportar funciones para manejar auth
