@@ -43,25 +43,25 @@ export async function executeQuery(query: string, params: any[] = []) {
 // Función para verificar la conexión
 export async function testConnection() {
   try {
-    console.log(" Probando conexión a MySQL...")
-    console.log(` Host: ${config.host}:${config.port}`)
-    console.log(` Usuario: ${config.user}`)
-    console.log(` Base de datos: ${config.database}`)
+    console.log("🔍 Probando conexión a MySQL...")
+    console.log(`📍 Host: ${config.host}:${config.port}`)
+    console.log(`👤 Usuario: ${config.user}`)
+    console.log(`🗄️ Base de datos: ${config.database}`)
 
     const connection = await pool.getConnection()
     await connection.ping()
 
-    // Obtener información de la base de datos
-    const [dbInfo] = await connection.execute("SELECT DATABASE() as current_db, VERSION() as version")
-    console.log(` Conexión exitosa a MySQL`)
-    console.log(` Base de datos actual: ${dbInfo[0].current_db}`)
-    console.log(` Versión MySQL: ${dbInfo[0].version}`)
+    // Obtener información de la base de datos - TIPADO CORREGIDO
+    const [dbInfo] = await connection.execute("SELECT DATABASE() as current_db, VERSION() as version") as any[]
+    console.log(`✅ Conexión exitosa a MySQL`)
+    console.log(`📁 Base de datos actual: ${(dbInfo as any)[0]?.current_db}`)
+    console.log(`⚡ Versión MySQL: ${(dbInfo as any)[0]?.version}`)
 
     connection.release()
     return true
-  } catch (error) {
-    console.error(" Error de conexión a MySQL:", error.message)
-    console.error(" Verifica que:")
+  } catch (error: any) {
+    console.error("❌ Error de conexión a MySQL:", error.message)
+    console.error("🔧 Verifica que:")
     console.error("   - MySQL esté ejecutándose")
     console.error("   - Las credenciales sean correctas")
     console.error("   - La base de datos 'gofish' exista")
