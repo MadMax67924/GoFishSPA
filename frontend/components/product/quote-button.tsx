@@ -76,100 +76,93 @@ export default function QuoteButton({ productId, productName }: QuoteButtonProps
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-blue-600" />
-              <h3 className="text-lg font-semibold">Cotización de Precio</h3>
-            </div>
-            <button 
-              onClick={() => setIsOpen(false)}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+    <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center" onClick={() => setIsOpen(false)}>
+      <div 
+        className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="bg-blue-50 px-6 py-4 border-b border-blue-100 flex items-center justify-between rounded-t-lg">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-blue-600" />
+            <h3 className="text-lg font-semibold text-blue-900">Cotización de Precio</h3>
           </div>
-          
-          <p className="text-sm text-gray-600 mb-4">
-            Estimación basada en historial de precios
-          </p>
+          <button
+            onClick={() => setIsOpen(false)}
+            className="text-blue-400 hover:text-blue-600 transition-colors p-1"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
 
-          {loading && (
+        {/* Content */}
+        <div className="p-6 space-y-4">
+          {loading ? (
             <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-2 text-sm text-gray-600">Calculando estimación...</p>
+              <div className="animate-spin w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p className="text-gray-600">Calculando cotización...</p>
             </div>
-          )}
-
-          {error && (
-            <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-md mb-4">
-              <AlertCircle className="w-4 h-4" />
-              <span className="text-sm">{error}</span>
+          ) : error ? (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+              <AlertCircle className="w-8 h-8 text-red-500 mx-auto mb-2" />
+              <div className="text-red-600 font-medium">Error interno del servidor</div>
+              <p className="text-red-500 text-sm mt-1">Intenta nuevamente en unos momentos</p>
             </div>
-          )}
-
-          {quote && !loading && (
-            <div className="space-y-4">
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-semibold text-gray-900">{quote.productName}</h4>
-                <p className="text-sm text-gray-600 mt-1">{quote.message}</p>
+          ) : quote ? (
+            <>
+              <div>
+                <h4 className="font-semibold text-gray-900 text-lg">{quote.productName}</h4>
+                <p className="text-gray-600 text-sm">Estimación basada en historial de precios</p>
               </div>
 
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-blue-900">Precio Estimado</span>
-                  <span className={`text-xs font-medium ${getConfidenceColor(quote.confidence)}`}>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-baseline justify-between">
+                  <div>
+                    <div className="text-sm text-blue-600 font-medium">Precio Estimado</div>
+                    <div className="text-2xl font-bold text-blue-900">
+                      ${quote.estimatedPrice.toLocaleString('es-CL')}
+                    </div>
+                  </div>
+                  <div className={`px-3 py-1 rounded-full text-sm font-medium bg-yellow-50 ${getConfidenceColor(quote.confidence)}`}>
                     {getConfidenceIcon(quote.confidence)} Confianza {quote.confidence}
-                  </span>
+                  </div>
                 </div>
-                <div className="text-2xl font-bold text-blue-600">
-                  ${quote.estimatedPrice.toLocaleString('es-CL')}
-                </div>
-                <div className="text-sm text-blue-700 mt-1">
+                
+                <div className="text-blue-700 text-sm mt-2">
                   Rango: ${quote.priceRange.min.toLocaleString('es-CL')} - ${quote.priceRange.max.toLocaleString('es-CL')}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="bg-gray-50 p-3 rounded">
-                  <span className="text-gray-600">Último precio:</span>
-                  <div className="font-semibold">${quote.lastPrice.toLocaleString('es-CL')}</div>
+                <div>
+                  <div className="text-gray-500">Último precio:</div>
+                  <div className="font-medium">${quote.lastPrice.toLocaleString('es-CL')}</div>
                 </div>
-                <div className="bg-gray-50 p-3 rounded">
-                  <span className="text-gray-600">Registros históricos:</span>
-                  <div className="font-semibold">{quote.historicalPrices}</div>
+                <div>
+                  <div className="text-gray-500">Registros históricos:</div>
+                  <div className="font-medium">{quote.historicalPrices}</div>
                 </div>
               </div>
 
-              <div className="bg-yellow-50 p-3 rounded-md border border-yellow-200">
-                <p className="text-xs text-yellow-800">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="text-yellow-800 text-sm">
                   <strong>Nota:</strong> Esta es una estimación basada en precios históricos. 
                   El precio final puede variar según disponibilidad y condiciones del mercado.
-                </p>
+                </div>
               </div>
+            </>
+          ) : null}
+        </div>
 
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => {
-                    window.open(`https://wa.me/56912345678?text=Hola, me interesa cotizar ${quote.productName}`, '_blank');
-                  }}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md transition-colors"
-                >
-                  Contactar por WhatsApp
-                </button>
-                <button 
-                  onClick={() => setIsOpen(false)}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
-                >
-                  Cerrar
-                </button>
-              </div>
-            </div>
-          )}
+        <div className="border-t p-4">
+          <button
+            onClick={() => setIsOpen(false)}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium"
+          >
+            Entendido
+          </button>
         </div>
       </div>
     </div>

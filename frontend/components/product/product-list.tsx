@@ -171,7 +171,7 @@ export default function ProductList() {
         {products.map((product) => (
           <div
             key={product.id}
-            className="bg-white rounded-lg overflow-hidden shadow-md transition-transform hover:translate-y-[-5px] border"
+            className="bg-white rounded-lg overflow-hidden shadow-md border"
           >
             <div className="relative h-48">
               <Image

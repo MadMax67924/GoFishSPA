@@ -252,7 +252,7 @@ async function setupDatabase() {
           8990.00,
           "/images/salmon.jpg",
           "pescados",
-          50,
+          0,
           true,
         ],
         [
