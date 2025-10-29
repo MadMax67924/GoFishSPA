@@ -7,25 +7,40 @@ import { useRouter } from "next/navigation"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Menu, ShoppingCart, User, Search, Heart, History, Mail } from "lucide-react"
+import { Menu, ShoppingCart, User, Search, Heart, History, Mail, LogOut } from "lucide-react"
 import LoginModal from "./login-modal"
 import CartIndicator from "@/components/cart/cart-indicator"
 import WishlistIndicator from "@/components/product/wishlist-indicator"
-import AdvancedSearchBar from "@/components/search/search-bar" // ← NUEVO IMPORT
+import AdvancedSearchBar from "@/components/search/search-bar"
 
 export default function Header() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [usuario, setUsuario] = useState<any>(null)
+  const [menuAbierto, setMenuAbierto] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10)
-    }
-
+    const handleScroll = () => setIsScrolled(window.scrollY > 10)
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
+
+  // ✅ Verificar si hay sesión activa
+  useEffect(() => {
+    const verificarSesion = async () => {
+      try {
+        const res = await fetch("/api/auth/me")
+        if (res.ok) {
+          const data = await res.json()
+          setUsuario(data.user)
+        }
+      } catch (error) {
+        console.error("Error verificando sesión:", error)
+      }
+    }
+    verificarSesion()
   }, [])
 
   const handleSearch = (e: React.FormEvent) => {
@@ -35,10 +50,22 @@ export default function Header() {
     }
   }
 
+  const cerrarSesion = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" })
+      setUsuario(null)
+      router.push("/")
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error)
+    }
+  }
+
   return (
     <>
       <header
-        className={`fixed top-0 w-full bg-[#005f73] text-white py-4 z-50 transition-shadow ${isScrolled ? "shadow-lg" : ""}`}
+        className={`fixed top-0 w-full bg-[#005f73] text-white py-4 z-50 transition-shadow ${
+          isScrolled ? "shadow-lg" : ""
+        }`}
       >
         <div className="container mx-auto px-4">
           {/* Primera fila: Logo, buscador y acciones */}
@@ -49,19 +76,64 @@ export default function Header() {
 
             {/* Buscador - Desktop */}
             <div className="hidden md:flex flex-1 max-w-md mx-8">
-              <AdvancedSearchBar /> {/* ← NUEVO COMPONENTE DE BÚSQUEDA AVANZADA */}
+              <AdvancedSearchBar />
             </div>
 
             {/* Acciones - Desktop */}
-            <div className="hidden lg:flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                className="hover:text-[#e9c46a] transition-colors"
-                onClick={() => setIsLoginModalOpen(true)}
-              >
-                <User className="h-5 w-5 mr-2" />
-                Iniciar Sesión
-              </Button>
+            <div className="hidden lg:flex items-center space-x-4 relative">
+              {/* ✅ Si hay usuario logueado → Mostrar menú de perfil */}
+              {usuario ? (
+                <div className="relative">
+                  <Button
+                    variant="ghost"
+                    className="hover:text-[#e9c46a] transition-colors flex items-center"
+                    onClick={() => setMenuAbierto(!menuAbierto)}
+                  >
+                    <User className="h-5 w-5 mr-2" />
+                    {usuario.name?.split(" ")[0] || "Perfil"}
+                  </Button>
+
+                  {menuAbierto && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded shadow-lg z-50 animate fade-in">
+                      <Link
+                        href="/perfil"
+                        className="block px-4 py-2 hover:bg-gray-100 transition"
+                        onClick={() => setMenuAbierto(false)}
+                      >
+                        Perfil
+                      </Link>
+                      <Link
+                        href="/seguridad"
+                        className="block px-4 py-2 hover:bg-gray-100 transition"
+                        onClick={() => setMenuAbierto(false)}
+                      >
+                        Seguridad (MFA)
+                      </Link>
+                      <button
+                        onClick={() => {
+                          setMenuAbierto(false)
+                          cerrarSesion()
+                        }}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2 text-red-600"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Cerrar sesión
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Button
+                  variant="ghost"
+                  className="hover:text-[#e9c46a] transition-colors"
+                  onClick={() => setIsLoginModalOpen(true)}
+                >
+                  <User className="h-5 w-5 mr-2" />
+                  Iniciar Sesión
+                </Button>
+              )}
+
+              {/* Resto de iconos sin tocar */}
               <Link href="/lista-deseados">
                 <Button variant="ghost" className="hover:text-[#e9c46a] transition-colors relative">
                   <Heart className="h-5 w-5" />
@@ -123,13 +195,39 @@ export default function Header() {
                   <Link href="/contacto" className="text-lg hover:text-[#e9c46a] transition-colors">
                     Contacto
                   </Link>
-                  <Button
-                    variant="ghost"
-                    className="justify-start p-0 text-lg hover:text-[#e9c46a] transition-colors"
-                    onClick={() => setIsLoginModalOpen(true)}
-                  >
-                    Iniciar Sesión
-                  </Button>
+
+                  {/* 🔹 En móvil también cambiamos el login */}
+                  {usuario ? (
+                    <>
+                      <Link
+                        href="/perfil"
+                        className="text-lg hover:text-[#e9c46a] transition-colors"
+                      >
+                        Perfil
+                      </Link>
+                      <Link
+                        href="/seguridad"
+                        className="text-lg hover:text-[#e9c46a] transition-colors"
+                      >
+                        Seguridad (MFA)
+                      </Link>
+                      <button
+                        onClick={cerrarSesion}
+                        className="text-lg hover:text-red-400 transition-colors text-left"
+                      >
+                        Cerrar sesión
+                      </button>
+                    </>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      className="justify-start p-0 text-lg hover:text-[#e9c46a] transition-colors"
+                      onClick={() => setIsLoginModalOpen(true)}
+                    >
+                      Iniciar Sesión
+                    </Button>
+                  )}
+
                   <Link
                     href="/lista-deseados"
                     className="text-lg hover:text-[#e9c46a] transition-colors relative inline-block"

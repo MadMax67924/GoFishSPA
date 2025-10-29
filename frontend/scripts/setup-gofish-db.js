@@ -68,6 +68,23 @@ async function setupDatabase() {
       console.log(" Tabla users creada")
     }
 
+    // Crear tabla de autenticación multifactor (MFA)
+    if (!existingTables.includes("usuarios_mfa")) {
+      console.log(" Creando tabla usuarios_mfa...")
+      await connection.execute(`
+    CREATE TABLE usuarios_mfa (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      id_usuario INT NOT NULL,
+      secret VARCHAR(255) NOT NULL,
+      activo BOOLEAN DEFAULT FALSE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (id_usuario) REFERENCES users(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `)
+      console.log(" Tabla usuarios_mfa creada")
+    }
+
     // Crear tabla de productos
     if (!existingTables.includes("products")) {
       console.log(" Creando tabla products...")
