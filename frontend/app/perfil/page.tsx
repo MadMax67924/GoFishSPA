@@ -10,9 +10,14 @@ export default function PerfilPage() {
     const cargarDatos = async () => {
       try {
         // Obtener info básica del usuario logueado
-        const userRes = await fetch("/api/auth/me")
+        const userRes = await fetch("/api/auth/me", { credentials: "include" })
         const userData = await userRes.json()
-        setUsuario(userData.user)
+        if (userData.authenticated) {
+          setUsuario(userData)
+        } else {
+          setUsuario(null)
+        }
+
 
         // Verificar si el MFA está activo
         const mfaRes = await fetch("/api/auth/mfa/status")

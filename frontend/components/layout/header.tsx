@@ -21,6 +21,7 @@ export default function Header() {
   const [menuAbierto, setMenuAbierto] = useState(false)
   const router = useRouter()
 
+  // 🔹 Efecto del scroll (sombra)
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10)
     window.addEventListener("scroll", handleScroll)
@@ -31,10 +32,12 @@ export default function Header() {
   useEffect(() => {
     const verificarSesion = async () => {
       try {
-        const res = await fetch("/api/auth/me")
+        const res = await fetch("/api/auth/me", { credentials: "include" })
         if (res.ok) {
           const data = await res.json()
-          setUsuario(data.user)
+          if (data.authenticated) {
+            setUsuario(data) // 🔹 Aquí está el cambio clave
+          }
         }
       } catch (error) {
         console.error("Error verificando sesión:", error)
@@ -93,8 +96,14 @@ export default function Header() {
                     {usuario.name?.split(" ")[0] || "Perfil"}
                   </Button>
 
+                  {/* 🔹 Menú desplegable con animación fade-in */}
                   {menuAbierto && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded shadow-lg z-50 animate fade-in">
+                    <div
+                      className="absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded shadow-lg z-50 opacity-0 animate-fade-in forwards"
+                      style={{
+                        animation: "fadeIn 0.2s ease-in-out forwards",
+                      }}
+                    >
                       <Link
                         href="/perfil"
                         className="block px-4 py-2 hover:bg-gray-100 transition"
@@ -133,7 +142,7 @@ export default function Header() {
                 </Button>
               )}
 
-              {/* Resto de iconos sin tocar */}
+              {/* Resto de iconos */}
               <Link href="/lista-deseados">
                 <Button variant="ghost" className="hover:text-[#e9c46a] transition-colors relative">
                   <Heart className="h-5 w-5" />
@@ -199,16 +208,10 @@ export default function Header() {
                   {/* 🔹 En móvil también cambiamos el login */}
                   {usuario ? (
                     <>
-                      <Link
-                        href="/perfil"
-                        className="text-lg hover:text-[#e9c46a] transition-colors"
-                      >
+                      <Link href="/perfil" className="text-lg hover:text-[#e9c46a] transition-colors">
                         Perfil
                       </Link>
-                      <Link
-                        href="/seguridad"
-                        className="text-lg hover:text-[#e9c46a] transition-colors"
-                      >
+                      <Link href="/seguridad" className="text-lg hover:text-[#e9c46a] transition-colors">
                         Seguridad (MFA)
                       </Link>
                       <button
@@ -268,6 +271,20 @@ export default function Header() {
       </header>
 
       <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
+
+      {/* 🔹 Animación CSS inline */}
+      <style jsx>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(-5px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </>
   )
 }
