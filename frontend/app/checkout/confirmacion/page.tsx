@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
+<<<<<<< Updated upstream
 import { Button } from "@/components/ui";
 import { CheckCircle } from "lucide-react"
 
@@ -65,6 +66,25 @@ export default function OrderConfirmationPage() {
       </>
     )
   }
+=======
+import { Button } from "@/components/ui/button"; // Cambiado de "@/components/ui"
+
+import { CheckCircle } from "lucide-react"
+
+export const metadata = {
+  title: "Pedido Confirmado | GoFish SpA",
+  description: "Tu pedido ha sido confirmado con éxito",
+}
+
+interface PageProps {
+  searchParams: {
+    order?: string
+  }
+}
+
+export default function OrderConfirmationPage({ searchParams }: PageProps) {
+  const orderNumber = searchParams.order || `GF-${Math.floor(100000 + Math.random() * 900000)}`
+>>>>>>> Stashed changes
 
   return (
     <>
@@ -86,11 +106,15 @@ export default function OrderConfirmationPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                 <div>
                   <p className="text-gray-600">Número de pedido:</p>
+<<<<<<< Updated upstream
                   <p className="font-medium">{orderNumber || `GF-${Math.floor(100000 + Math.random() * 900000)}`}</p>
+=======
+                  <p className="font-medium">{orderNumber}</p>
+>>>>>>> Stashed changes
                 </div>
                 <div>
                   <p className="text-gray-600">Fecha:</p>
-                  <p className="font-medium">{new Date().toLocaleDateString()}</p>
+                  <p className="font-medium">{new Date().toLocaleDateString('es-CL')}</p>
                 </div>
                 <div>
                   <p className="text-gray-600">Estado:</p>

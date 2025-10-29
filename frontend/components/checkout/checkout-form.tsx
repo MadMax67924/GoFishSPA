@@ -106,6 +106,18 @@ export default function CheckoutForm() {
     e.preventDefault()
     setIsSubmitting(true)
 
+    // Validaciones básicas
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || 
+        !formData.address || !formData.city || !formData.region || !formData.paymentMethod) {
+      toast({
+        title: "Error",
+        description: "Por favor completa todos los campos requeridos",
+        variant: "destructive",
+      })
+      setIsSubmitting(false)
+      return
+    }
+
     // Validar RUT si es factura
     if (formData.documentType === 'factura') {
       if (!formData.rut) {
@@ -140,6 +152,7 @@ export default function CheckoutForm() {
     }
 
     try {
+<<<<<<< Updated upstream
       const res = await fetch("/api/cart")
       if (!res.ok) throw new Error("Error al cargar el resumen del carrito")
     
@@ -162,6 +175,31 @@ export default function CheckoutForm() {
                 formData.paymentMethod === "webpay" ? "pending" : "confirmed"
       }
 
+=======
+      // Obtener carrito actual
+      const res = await fetch("/api/cart")
+      if (!res.ok) throw new Error("Error al cargar el carrito")
+      const cart = await res.json()
+      const items = cart.items || []
+      
+      if (items.length === 0) {
+        toast({
+          title: "Error",
+          description: "Tu carrito está vacío",
+          variant: "destructive",
+        })
+        setIsSubmitting(false)
+        return
+      }
+
+      const orderData = {
+        ...formData,
+        cartItems: items
+      }
+
+      console.log("📦 Enviando orden:", orderData)
+
+>>>>>>> Stashed changes
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: {
@@ -199,6 +237,7 @@ export default function CheckoutForm() {
         description: "Estamos preparando tu checkout seguro...",
       })
 
+<<<<<<< Updated upstream
       const paymentIntentRes = await fetch("/api/payment-intent", {
         method: "POST",
         headers: {
@@ -213,6 +252,20 @@ export default function CheckoutForm() {
       
       if (!paymentIntentRes.ok) {
         throw new Error(paymentData.error || "Error al crear la sesión de pago")
+=======
+      console.log("✅ Orden creada:", data)
+
+      // Calcular total para redirección
+      const subtotal = items.reduce((acc: number, item: any) => acc + item.price * item.quantity, 0)
+      const shipping = subtotal > 30000 ? 0 : 5000
+      const total = subtotal + shipping
+
+      // Redirección basada en el total y región
+      if (total < 20000 && formData.region !== "Valparaíso") {
+        router.push(`/redireccion-whattsap?order=${data.orderId}`)
+      } else {
+        router.push(`/checkout/confirmacion?order=${data.orderNumber}`)
+>>>>>>> Stashed changes
       }
 
       window.location.href = paymentData.checkoutUrl
@@ -227,7 +280,7 @@ export default function CheckoutForm() {
     router.push(`/checkout/confirmacion?order=${data.orderNumber}`)
     
     } catch (error: any) {
-      console.error("Error al procesar el pedido:", error)
+      console.error("❌ Error al procesar el pedido:", error)
       toast({
         title: "Error",
         description: error.message || "Hubo un problema al procesar tu pedido. Por favor, inténtalo de nuevo.",
@@ -247,7 +300,11 @@ export default function CheckoutForm() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
+<<<<<<< Updated upstream
               <Label htmlFor="firstName">Nombre</Label>
+=======
+              <Label htmlFor="firstName">Nombre *</Label>
+>>>>>>> Stashed changes
               <Input 
                 id="firstName" 
                 name="firstName" 
@@ -257,7 +314,11 @@ export default function CheckoutForm() {
               />
             </div>
             <div className="space-y-2">
+<<<<<<< Updated upstream
               <Label htmlFor="lastName">Apellido</Label>
+=======
+              <Label htmlFor="lastName">Apellido *</Label>
+>>>>>>> Stashed changes
               <Input 
                 id="lastName" 
                 name="lastName" 
@@ -270,7 +331,11 @@ export default function CheckoutForm() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
+<<<<<<< Updated upstream
               <Label htmlFor="email">Correo electrónico</Label>
+=======
+              <Label htmlFor="email">Correo electrónico *</Label>
+>>>>>>> Stashed changes
               <Input 
                 id="email" 
                 name="email" 
@@ -281,7 +346,11 @@ export default function CheckoutForm() {
               />
             </div>
             <div className="space-y-2">
+<<<<<<< Updated upstream
               <Label htmlFor="phone">Teléfono</Label>
+=======
+              <Label htmlFor="phone">Teléfono *</Label>
+>>>>>>> Stashed changes
               <Input 
                 id="phone" 
                 name="phone" 
@@ -321,7 +390,7 @@ export default function CheckoutForm() {
           {formData.documentType === 'factura' && (
             <div className="space-y-4 border-t pt-4">
               <div className="space-y-2">
-                <Label htmlFor="rut">RUT</Label>
+                <Label htmlFor="rut">RUT *</Label>
                 <Input 
                   id="rut" 
                   name="rut" 
@@ -337,7 +406,7 @@ export default function CheckoutForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="businessName">Razón Social</Label>
+                <Label htmlFor="businessName">Razón Social *</Label>
                 <Input 
                   id="businessName" 
                   name="businessName" 
@@ -358,7 +427,11 @@ export default function CheckoutForm() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
+<<<<<<< Updated upstream
             <Label htmlFor="address">Dirección</Label>
+=======
+            <Label htmlFor="address">Dirección *</Label>
+>>>>>>> Stashed changes
             <Input 
               id="address" 
               name="address" 
@@ -370,7 +443,11 @@ export default function CheckoutForm() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
+<<<<<<< Updated upstream
               <Label htmlFor="city">Ciudad</Label>
+=======
+              <Label htmlFor="city">Ciudad *</Label>
+>>>>>>> Stashed changes
               <Input 
                 id="city" 
                 name="city" 
@@ -380,7 +457,7 @@ export default function CheckoutForm() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="region">Región</Label>
+              <Label htmlFor="region">Región *</Label>
               <select
                 id="region"
                 name="region"
@@ -400,7 +477,11 @@ export default function CheckoutForm() {
           </div>
 
           <div className="space-y-2">
+<<<<<<< Updated upstream
             <Label htmlFor="postalCode">Código postal</Label>
+=======
+            <Label htmlFor="postalCode">Código postal *</Label>
+>>>>>>> Stashed changes
             <Input 
               id="postalCode" 
               name="postalCode" 
@@ -452,8 +533,13 @@ export default function CheckoutForm() {
 
       <Button 
         type="submit" 
+<<<<<<< Updated upstream
           className="w-full bg-[#005f73] hover:bg-[#003d4d] h-12 text-lg" 
           disabled={isSubmitting || (formData.documentType === 'factura' && !!rutError)}
+=======
+        className="w-full bg-[#005f73] hover:bg-[#003d4d] h-12 text-lg" 
+        disabled={isSubmitting || (formData.documentType === 'factura' && !!rutError)}
+>>>>>>> Stashed changes
       >
         {isSubmitting ? "Procesando..." : "Confirmar pedido"}
       </Button>
