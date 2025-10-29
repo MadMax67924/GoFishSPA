@@ -10,39 +10,47 @@ const JWT_SECRET = process.env.JWT_SECRET || "your-development-jwt-secret-key"
 export async function POST(request: Request) {
   try {
     const orderData = await request.json()
+    console.log("📦 Datos de la orden recibidos:", orderData)
+    
     const { 
-      
       firstName, 
-      
       lastName, 
-      
       email, 
-      
       phone, 
-      
       address, 
-      
       city, 
-      
       region, 
-      
       postalCode, 
-      
       paymentMethod, 
-      
       notes, 
-      
       cartItems,
-      documentType, // Nuevo campo
-      rut, // Nuevo campo
-      businessName // Nuevo campo
-   
+      documentType,
+      rut,
+      businessName
     } = orderData
 
-    if (!firstName || !lastName || !email || !phone || !address || !city || !region || !paymentMethod) {
-      return NextResponse.json({ error: "Todos los campos requeridos deben ser completados" }, { status: 400 })
+    // Validaciones básicas
+    if (!firstName || !lastName || !email || !phone || !address || !city || !region || !paymentMethod || !postalCode) {
+      return NextResponse.json({ 
+        error: "Todos los campos requeridos deben ser completados",
+        missing: {
+          firstName: !firstName,
+          lastName: !lastName,
+          email: !email,
+          phone: !phone,
+          address: !address,
+          city: !city,
+          region: !region,
+          postalCode: !postalCode,
+          paymentMethod: !paymentMethod
+        }
+      }, { status: 400 })
     }
-    
+
+    if (!Array.isArray(cartItems) || cartItems.length === 0) {
+      return NextResponse.json({ error: "El carrito está vacío" }, { status: 400 })
+    }
+
     const cookieStore = await cookies()
     const cartId = cookieStore.get("cartId")?.value
     const token = cookieStore.get("authToken")?.value
@@ -53,6 +61,7 @@ export async function POST(request: Request) {
       try {
         const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; email: string }
         userId = decoded.userId
+        console.log("👤 Usuario autenticado:", userId)
       } catch (error) {
         console.error("Token inválido, continuando como usuario no autenticado:", error)
       }
@@ -62,38 +71,34 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No hay carrito activo" }, { status: 400 })
     }
 
-    if (!Array.isArray(cartItems) || cartItems.length === 0) {
-      return NextResponse.json({ error: "El carrito está vacío" }, { status: 400 })
-    }
-
+    // Calcular totales
     const subtotal = cartItems.reduce((acc: number, item: any) => acc + item.price * item.quantity, 0)
     const shipping = subtotal > 30000 ? 0 : 5000
     const total = subtotal + shipping
-    console.log(total)
-    console.log(orderData.region)
     
+    console.log("💰 Totales calculados:", { subtotal, shipping, total })
+
     let status: string
     if (paymentMethod === "webpay") {
-      status = "pending"; 
+      status = "pending"
     } else if (total < 30000 && region !== "Valparaíso") {
       status = "cancelled"
     } else {
       status = "confirmed"
     }
 
-    
     const orderNumber = `GF-${Date.now()}-${Math.floor(Math.random() * 1000)}`
+    console.log("📝 Creando orden:", orderNumber)
 
-    // SQL actualizado con nuevos campos
+    // USAR LA ESTRUCTURA EXACTA DE LA TABLA ORDERS SEGÚN TU SCRIPT
     const orderSql = `
       INSERT INTO orders (
         order_number, user_id, first_name, last_name, email, phone, address, city, region, 
-        postal_code, payment_method, notes, subtotal, shipping, total, status,
-        document_type, rut, business_name
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        postal_code, payment_method, notes, subtotal, shipping, total, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
 
-    const orderResult = await executeQuery(orderSql, [
+    const orderParams = [
       orderNumber,
       userId, 
       firstName,
@@ -105,19 +110,22 @@ export async function POST(request: Request) {
       region,
       postalCode,
       paymentMethod,
-      notes,
+      notes || '',
       subtotal,
       shipping,
       total,
-      status,
-      documentType || 'boleta',
-      rut || null,
-      businessName || null
-    ])
+      status
+    ]
 
-    const orderId = (orderResult as any).insertId
+    console.log("🛒 Insertando orden en la base de datos...")
+    console.log("📋 Params:", orderParams)
     
+    const orderResult = await executeQuery(orderSql, orderParams)
+    const orderId = (orderResult as any).insertId
+    console.log("✅ Orden creada con ID:", orderId)
+
     // Insertar items de la orden
+    console.log("📋 Insertando items de la orden...")
     for (const item of cartItems as any[]) {
       const orderItemSql = `
         INSERT INTO order_items (order_id, product_id, product_name, product_price, quantity, subtotal)
@@ -130,12 +138,14 @@ export async function POST(request: Request) {
         item.name,
         item.price,
         item.quantity,
-        item.price * item.quantity,
+        itemTotal,
       ])
     }
+    console.log("✅ Items de orden insertados")
 
-    // Generar documento PDF
+    // Generar documento PDF (manejar errores sin detener el proceso)
     try {
+      console.log("📄 Generando documento PDF...")
       const documentData = {
         orderNumber,
         orderDate: new Date().toLocaleDateString('es-CL'),
@@ -159,48 +169,55 @@ export async function POST(request: Request) {
         businessName: businessName || undefined
       }
 
-      // Generar PDF
       const pdfBuffer = await generateDocumentPDF(documentData)
-      
-      // Guardar PDF en sistema de archivos (en producción usarías S3 o similar)
-      const fileName = `${orderNumber}-${documentType || 'boleta'}.pdf`
-      const filePath = `./public/documents/${fileName}`
-      
-      // En un entorno real, aquí guardarías el archivo
-      // Por ahora simulamos la URL
-      const documentUrl = `/documents/${fileName}`
-      const documentNumber = generateDocumentNumber(orderNumber, documentType || 'boleta')
+      console.log("✅ PDF generado:", pdfBuffer.length, "bytes")
 
-      // Actualizar orden con información del documento
-      await executeQuery(
-        `UPDATE orders SET document_generated = TRUE, document_url = ? WHERE id = ?`,
-        [documentUrl, orderId]
-      )
-
-      // Registrar en document_logs
-      await executeQuery(
-        `INSERT INTO document_logs (order_id, document_type, document_number, download_url) 
-         VALUES (?, ?, ?, ?)`,
-        [orderId, documentType || 'boleta', documentNumber, documentUrl]
-      )
-
-      // Enviar email con el documento (opcional)
+      // Intentar actualizar con información del documento si las columnas existen
       try {
-        await sendDocumentEmail(email, `${firstName} ${lastName}`, documentType || 'boleta', orderNumber, pdfBuffer)
+        await addDocumentColumnsIfNeeded()
         
-        // Marcar como enviado
+        const documentNumber = generateDocumentNumber(orderNumber, documentType || 'boleta')
+        const fileName = `${orderNumber}-${documentType || 'boleta'}.pdf`
+        const documentUrl = `/documents/${fileName}`
+
+        // Actualizar orden con información del documento si las columnas existen
         await executeQuery(
-          `UPDATE document_logs SET sent_via_email = TRUE WHERE order_id = ?`,
-          [orderId]
+          `UPDATE orders SET document_generated = TRUE, document_url = ?, document_type = ?, rut = ?, business_name = ? WHERE id = ?`,
+          [documentUrl, documentType || 'boleta', rut || null, businessName || null, orderId]
         )
-      } catch (emailError) {
-        console.error("Error enviando email con documento:", emailError)
-        // No fallar la orden si el email falla
+
+        // Registrar en document_logs si la tabla existe
+        try {
+          await executeQuery(
+            `INSERT INTO document_logs (order_id, document_type, document_number, download_url) 
+             VALUES (?, ?, ?, ?)`,
+            [orderId, documentType || 'boleta', documentNumber, documentUrl]
+          )
+        } catch (logsError) {
+          console.log("⚠️ No se pudo registrar en document_logs:", logsError)
+        }
+
+        // Intentar enviar email (no crítico)
+        try {
+          await sendDocumentEmail(email, `${firstName} ${lastName}`, documentType || 'boleta', orderNumber, pdfBuffer)
+          try {
+            await executeQuery(
+              `UPDATE document_logs SET sent_via_email = TRUE WHERE order_id = ?`,
+              [orderId]
+            )
+          } catch (updateError) {
+            console.log("⚠️ No se pudo actualizar estado de email:", updateError)
+          }
+        } catch (emailError) {
+          console.error("⚠️ Error enviando email (no crítico):", emailError)
+        }
+
+      } catch (docError) {
+        console.error("⚠️ Error actualizando información de documento:", docError)
       }
 
     } catch (documentError) {
-      console.error("Error generando documento:", documentError)
-      // No fallar la orden si la generación del documento falla
+      console.error("⚠️ Error generando documento (no crítico):", documentError)
     }
 
     // Limpiar carrito
@@ -211,26 +228,78 @@ export async function POST(request: Request) {
       path: "/",
     })
 
+    console.log("🎉 Orden completada exitosamente")
+    
     return NextResponse.json({
       success: true,
       orderNumber,
       orderId,
       total,
       documentType: documentType || 'boleta',
-      documentGenerated: true
+      documentGenerated: true,
+      status: status
     })
-  } catch (error) {
-    console.error("Error al crear pedido:", error)
-    return NextResponse.json({ error: "Error al crear pedido" }, { status: 500 })
+
+  } catch (error: any) {
+    console.error("❌ Error al crear pedido:", error)
+    
+    return NextResponse.json({ 
+      error: "Error al crear pedido",
+      message: error.message,
+      code: error.code,
+      sqlMessage: error.sqlMessage
+    }, { status: 500 })
   }
 }
 
+// Función para agregar columnas de documento si no existen (VERSIÓN MEJORADA)
+async function addDocumentColumnsIfNeeded() {
+  const columnsToAdd = [
+    { name: 'document_type', type: "ENUM('boleta', 'factura') DEFAULT 'boleta'" },
+    { name: 'rut', type: "VARCHAR(20) NULL" },
+    { name: 'business_name', type: "VARCHAR(255) NULL" },
+    { name: 'document_generated', type: "BOOLEAN DEFAULT FALSE" },
+    { name: 'document_url', type: "VARCHAR(500) NULL" }
+  ]
+
+  for (const column of columnsToAdd) {
+    try {
+      await executeQuery(`ALTER TABLE orders ADD COLUMN ${column.name} ${column.type}`)
+      console.log(`✅ Columna ${column.name} agregada`)
+    } catch (error: any) {
+      if (error.code === 'ER_DUP_FIELDNAME') {
+        // Columna ya existe, está bien - no mostrar error
+        console.log(`ℹ️ Columna ${column.name} ya existe`)
+      } else {
+        console.log(`⚠️ No se pudo agregar columna ${column.name}:`, error.message)
+      }
+    }
+  }
+
+  // Crear tabla document_logs si no existe
+  try {
+    await executeQuery(`
+      CREATE TABLE IF NOT EXISTS document_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        order_id INT NOT NULL,
+        document_type ENUM('boleta', 'factura') NOT NULL,
+        document_number VARCHAR(100) NOT NULL,
+        download_url VARCHAR(500) NULL,
+        sent_via_email BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `)
+    console.log("✅ Tabla document_logs verificada/creada")
+  } catch (error) {
+    console.log("⚠️ No se pudo crear document_logs:", error)
+  }
+}
+// GET method
 export async function GET() {
   try {
     const sql = `
       SELECT 
-        id, order_number, first_name, last_name, email, total, status, created_at,
-        document_type, document_generated, document_url
+        id, order_number, first_name, last_name, email, total, status, created_at
       FROM orders 
       ORDER BY created_at DESC
     `

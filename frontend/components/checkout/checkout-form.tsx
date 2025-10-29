@@ -173,7 +173,7 @@ export default function CheckoutForm() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || "Error al procesar el pedido")
+        throw new Error(data.error || data.message || "Error al procesar el pedido")
       }
 
       if (shouldRedirectToWhatsapp) {
@@ -191,41 +191,51 @@ export default function CheckoutForm() {
           ...orderData,
           id: data.orderId, 
           order_number: data.orderNumber,
-          items: items 
+          items: items,
+          // CORRECCIÓN: Asegurar que los campos tengan los nombres correctos para Stripe
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          postal_code: formData.postalCode
         }
 
-      toast({
-        title: "Creando sesión de pago",
-        description: "Estamos preparando tu checkout seguro...",
-      })
+        toast({
+          title: "Creando sesión de pago",
+          description: "Estamos preparando tu checkout seguro...",
+        })
 
-      const paymentIntentRes = await fetch("/api/payment-intent", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          orderData: completeOrderData
-        }),
-      })
+        const paymentIntentRes = await fetch("/api/payment-intent", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            orderData: completeOrderData
+          }),
+        })
 
-      const paymentData = await paymentIntentRes.json()
-      
-      if (!paymentIntentRes.ok) {
-        throw new Error(paymentData.error || "Error al crear la sesión de pago")
+        const paymentData = await paymentIntentRes.json()
+        
+        if (!paymentIntentRes.ok) {
+          throw new Error(paymentData.error || "Error al crear la sesión de pago")
+        }
+
+        // CORRECCIÓN: Verificar que checkoutUrl existe antes de redirigir
+        if (paymentData.checkoutUrl) {
+          console.log("🔗 Redirigiendo a Stripe:", paymentData.checkoutUrl)
+          window.location.href = paymentData.checkoutUrl
+        } else {
+          throw new Error("No se recibió URL de checkout de Stripe")
+        }
+        return
       }
 
-      window.location.href = paymentData.checkoutUrl
-      return
-    }
+      toast({
+        title: "¡Pedido realizado con éxito!",
+        description: `Número de pedido: ${data.orderNumber}`,
+      })
 
-    toast({
-      title: "¡Pedido realizado con éxito!",
-      description: `Número de pedido: ${data.orderNumber}`,
-    })
-
-    router.push(`/checkout/confirmacion?order=${data.orderNumber}`)
-    
+      router.push(`/checkout/confirmacion?order=${data.orderNumber}`)
+      
     } catch (error: any) {
       console.error("Error al procesar el pedido:", error)
       toast({
@@ -452,8 +462,8 @@ export default function CheckoutForm() {
 
       <Button 
         type="submit" 
-          className="w-full bg-[#005f73] hover:bg-[#003d4d] h-12 text-lg" 
-          disabled={isSubmitting || (formData.documentType === 'factura' && !!rutError)}
+        className="w-full bg-[#005f73] hover:bg-[#003d4d] h-12 text-lg" 
+        disabled={isSubmitting || (formData.documentType === 'factura' && !!rutError)}
       >
         {isSubmitting ? "Procesando..." : "Confirmar pedido"}
       </Button>
