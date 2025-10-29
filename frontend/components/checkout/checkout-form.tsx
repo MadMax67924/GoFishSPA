@@ -152,16 +152,17 @@ export default function CheckoutForm() {
 
       const shouldRedirectToWhatsapp = total < 20000 && formData.region !== "Valparaíso"
 
+      // CORRECCIÓN: Siempre usar "pending" inicialmente
       const orderData = {
         ...formData,
         cartItems: items,
         subtotal,
         shipping,
         total,
-        status: shouldRedirectToWhatsapp ? "pending" : 
-                formData.paymentMethod === "webpay" ? "pending" : "confirmed"
+        status: "pending" // CORRECCIÓN: Siempre pending inicialmente
       }
 
+      console.log("📦 Enviando orden al servidor...")
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: {
@@ -176,6 +177,9 @@ export default function CheckoutForm() {
         throw new Error(data.error || data.message || "Error al procesar el pedido")
       }
 
+      console.log("✅ Orden creada:", data)
+
+      // CORRECCIÓN: Primero verificar WhatsApp
       if (shouldRedirectToWhatsapp) {
         toast({
           title: "Redirigiendo a WhatsApp",
@@ -186,7 +190,10 @@ export default function CheckoutForm() {
         return
       }
 
+      // CORRECCIÓN: Luego verificar WebPay
       if (formData.paymentMethod === "webpay") {
+        console.log("💳 Iniciando proceso de pago WebPay...")
+        
         const completeOrderData = {
           ...orderData,
           id: data.orderId, 
@@ -203,6 +210,7 @@ export default function CheckoutForm() {
           description: "Estamos preparando tu checkout seguro...",
         })
 
+        console.log("🛒 Llamando a Stripe...")
         const paymentIntentRes = await fetch("/api/payment-intent", {
           method: "POST",
           headers: {
@@ -216,6 +224,7 @@ export default function CheckoutForm() {
         const paymentData = await paymentIntentRes.json()
         
         if (!paymentIntentRes.ok) {
+          console.error("❌ Error de Stripe:", paymentData)
           throw new Error(paymentData.error || "Error al crear la sesión de pago")
         }
 
@@ -229,6 +238,7 @@ export default function CheckoutForm() {
         return
       }
 
+      // CORRECCIÓN: Solo llegar aquí si es transferencia/efectivo y no requiere WhatsApp
       toast({
         title: "¡Pedido realizado con éxito!",
         description: `Número de pedido: ${data.orderNumber}`,

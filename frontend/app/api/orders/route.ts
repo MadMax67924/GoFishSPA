@@ -78,13 +78,14 @@ export async function POST(request: Request) {
     
     console.log("💰 Totales calculados:", { subtotal, shipping, total })
 
+    // CORRECCIÓN: Para WebPay, siempre debe ser "pending" hasta que se complete el pago
     let status: string
     if (paymentMethod === "webpay") {
-      status = "pending"
-    } else if (total < 30000 && region !== "Valparaíso") {
-      status = "cancelled"
+      status = "pending" // Pendiente hasta que Stripe confirme el pago
+    } else if (total < 20000 && region !== "Valparaíso") {
+      status = "pending" // Pendiente de confirmación por WhatsApp
     } else {
-      status = "confirmed"
+      status = "confirmed" // Solo confirmado para transferencia/efectivo en condiciones normales
     }
 
     const orderNumber = `GF-${Date.now()}-${Math.floor(Math.random() * 1000)}`
@@ -143,101 +144,109 @@ export async function POST(request: Request) {
     }
     console.log("✅ Items de orden insertados")
 
-    // Generar documento PDF (manejar errores sin detener el proceso)
-    try {
-      console.log("📄 Generando documento PDF...")
-      const documentData = {
-        orderNumber,
-        orderDate: new Date().toLocaleDateString('es-CL'),
-        customerName: `${firstName} ${lastName}`,
-        customerEmail: email,
-        customerAddress: address,
-        customerCity: city,
-        customerRegion: region,
-        customerPhone: phone,
-        items: cartItems.map((item: any) => ({
-          name: item.name,
-          quantity: item.quantity,
-          unitPrice: item.price,
-          total: item.price * item.quantity
-        })),
-        subtotal,
-        shipping,
-        total,
-        documentType: documentType || 'boleta',
-        rut: rut || undefined,
-        businessName: businessName || undefined
-      }
-
-      const pdfBuffer = await generateDocumentPDF(documentData)
-      console.log("✅ PDF generado:", pdfBuffer.length, "bytes")
-
-      // Intentar actualizar con información del documento si las columnas existen
+    // CORRECCIÓN IMPORTANTE: Para WebPay, NO generar documentos ni limpiar carrito todavía
+    // Solo proceder con la generación de documentos si NO es WebPay
+    if (paymentMethod !== "webpay") {
+      // Generar documento PDF (manejar errores sin detener el proceso)
       try {
-        await addDocumentColumnsIfNeeded()
-        
-        const documentNumber = generateDocumentNumber(orderNumber, documentType || 'boleta')
-        const fileName = `${orderNumber}-${documentType || 'boleta'}.pdf`
-        const documentUrl = `/documents/${fileName}`
-
-        // Actualizar orden con información del documento si las columnas existen
-        await executeQuery(
-          `UPDATE orders SET document_generated = TRUE, document_url = ?, document_type = ?, rut = ?, business_name = ? WHERE id = ?`,
-          [documentUrl, documentType || 'boleta', rut || null, businessName || null, orderId]
-        )
-
-        // Registrar en document_logs si la tabla existe
-        try {
-          await executeQuery(
-            `INSERT INTO document_logs (order_id, document_type, document_number, download_url) 
-             VALUES (?, ?, ?, ?)`,
-            [orderId, documentType || 'boleta', documentNumber, documentUrl]
-          )
-        } catch (logsError) {
-          console.log("⚠️ No se pudo registrar en document_logs:", logsError)
+        console.log("📄 Generando documento PDF...")
+        const documentData = {
+          orderNumber,
+          orderDate: new Date().toLocaleDateString('es-CL'),
+          customerName: `${firstName} ${lastName}`,
+          customerEmail: email,
+          customerAddress: address,
+          customerCity: city,
+          customerRegion: region,
+          customerPhone: phone,
+          items: cartItems.map((item: any) => ({
+            name: item.name,
+            quantity: item.quantity,
+            unitPrice: item.price,
+            total: item.price * item.quantity
+          })),
+          subtotal,
+          shipping,
+          total,
+          documentType: documentType || 'boleta',
+          rut: rut || undefined,
+          businessName: businessName || undefined
         }
 
-        // Intentar enviar email (no crítico)
+        const pdfBuffer = await generateDocumentPDF(documentData)
+        console.log("✅ PDF generado:", pdfBuffer.length, "bytes")
+
+        // Actualizar información del documento
         try {
-          await sendDocumentEmail(email, `${firstName} ${lastName}`, documentType || 'boleta', orderNumber, pdfBuffer)
+          await addDocumentColumnsIfNeeded()
+          
+          const documentNumber = generateDocumentNumber(orderNumber, documentType || 'boleta')
+          const fileName = `${orderNumber}-${documentType || 'boleta'}.pdf`
+          const documentUrl = `/documents/${fileName}`
+
+          // Actualizar orden con información del documento
+          await executeQuery(
+            `UPDATE orders SET document_generated = TRUE, document_url = ?, document_type = ?, rut = ?, business_name = ? WHERE id = ?`,
+            [documentUrl, documentType || 'boleta', rut || null, businessName || null, orderId]
+          )
+
+          // Registrar en document_logs
           try {
             await executeQuery(
-              `UPDATE document_logs SET sent_via_email = TRUE WHERE order_id = ?`,
-              [orderId]
+              `INSERT INTO document_logs (order_id, document_type, document_number, download_url) 
+               VALUES (?, ?, ?, ?)`,
+              [orderId, documentType || 'boleta', documentNumber, documentUrl]
             )
-          } catch (updateError) {
-            console.log("⚠️ No se pudo actualizar estado de email:", updateError)
+          } catch (logsError) {
+            console.log("⚠️ No se pudo registrar en document_logs:", logsError)
           }
-        } catch (emailError) {
-          console.error("⚠️ Error enviando email (no crítico):", emailError)
+
+          // Intentar enviar email (no crítico)
+          try {
+            await sendDocumentEmail(email, `${firstName} ${lastName}`, documentType || 'boleta', orderNumber, pdfBuffer)
+            try {
+              await executeQuery(
+                `UPDATE document_logs SET sent_via_email = TRUE WHERE order_id = ?`,
+                [orderId]
+              )
+            } catch (updateError) {
+              console.log("⚠️ No se pudo actualizar estado de email:", updateError)
+            }
+          } catch (emailError) {
+            console.error("⚠️ Error enviando email (no crítico):", emailError)
+          }
+
+        } catch (docError) {
+          console.error("⚠️ Error actualizando información de documento:", docError)
         }
 
-      } catch (docError) {
-        console.error("⚠️ Error actualizando información de documento:", docError)
+      } catch (documentError) {
+        console.error("⚠️ Error generando documento (no crítico):", documentError)
       }
 
-    } catch (documentError) {
-      console.error("⚠️ Error generando documento (no crítico):", documentError)
+      // Limpiar carrito solo si NO es WebPay
+      cookieStore.set("cartId", "", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 0,
+        path: "/",
+      })
     }
 
-    // Limpiar carrito
-    cookieStore.set("cartId", "", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 0,
-      path: "/",
-    })
-
-    console.log("🎉 Orden completada exitosamente")
+    console.log("🎉 Orden procesada exitosamente - Payment Method:", paymentMethod)
     
+    // CORRECCIÓN: Devolver información específica según el método de pago
     return NextResponse.json({
       success: true,
       orderNumber,
       orderId,
       total,
       documentType: documentType || 'boleta',
-      documentGenerated: true,
-      status: status
+      documentGenerated: paymentMethod !== "webpay", // Solo generado si no es WebPay
+      status: status,
+      paymentMethod: paymentMethod,
+      requiresPayment: paymentMethod === "webpay", // Indicar que requiere pago
+      requiresWhatsApp: total < 20000 && region !== "Valparaíso"
     })
 
   } catch (error: any) {
@@ -252,7 +261,7 @@ export async function POST(request: Request) {
   }
 }
 
-// Función para agregar columnas de documento si no existen (VERSIÓN MEJORADA)
+// Función para agregar columnas de documento si no existen
 async function addDocumentColumnsIfNeeded() {
   const columnsToAdd = [
     { name: 'document_type', type: "ENUM('boleta', 'factura') DEFAULT 'boleta'" },
@@ -294,6 +303,7 @@ async function addDocumentColumnsIfNeeded() {
     console.log("⚠️ No se pudo crear document_logs:", error)
   }
 }
+
 // GET method
 export async function GET() {
   try {
