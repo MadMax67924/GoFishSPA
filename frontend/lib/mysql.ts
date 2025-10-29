@@ -1,6 +1,6 @@
 import mysql from "mysql2/promise"
 
-// Configuración simplificada sin opciones obsoletas
+// Configuración para conectar a tu base de datos gofish_db
 const config = {
   host: process.env.DB_HOST || "127.0.0.1",
   port: Number(process.env.DB_PORT) || 3306,
@@ -10,26 +10,28 @@ const config = {
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  connectTimeout: 60000,
-  charset: 'utf8mb4',
+  acquireTimeout: 60000,
+  timeout: 60000,
+  reconnect: true,
+  ssl: false, // Deshabilitado para conexión local
 }
 
 // Crear pool de conexiones
 const pool = mysql.createPool(config)
 
-// Función helper para ejecutar consultas
+// Función helper para ejecutar consultas con mejor manejo de errores
 export async function executeQuery(query: string, params: any[] = []) {
   let connection
   try {
     connection = await pool.getConnection()
     console.log(`🔍 Ejecutando query: ${query.substring(0, 100)}...`)
     const [results] = await connection.execute(query, params)
-    console.log(`✅ Query ejecutada exitosamente`)
+    console.log(` Query ejecutada exitosamente`)
     return results
   } catch (error) {
-    console.error("❌ Error ejecutando consulta:", error)
-    console.error("📝 Query:", query)
-    console.error("🔢 Params:", params)
+    console.error(" Error ejecutando consulta:", error)
+    console.error(" Query:", query)
+    console.error("Params:", params)
     throw error
   } finally {
     if (connection) {
@@ -38,9 +40,9 @@ export async function executeQuery(query: string, params: any[] = []) {
   }
 }
 
+// Función para verificar la conexión
 export async function testConnection() {
   try {
-<<<<<<< Updated upstream
     console.log("🔍 Probando conexión a MySQL...")
     console.log(`📍 Host: ${config.host}:${config.port}`)
     console.log(`👤 Usuario: ${config.user}`)
@@ -55,22 +57,14 @@ export async function testConnection() {
     console.log(`📁 Base de datos actual: ${(dbInfo as any)[0]?.current_db}`)
     console.log(`⚡ Versión MySQL: ${(dbInfo as any)[0]?.version}`)
 
-=======
-    const connection = await pool.getConnection()
-    await connection.ping()
->>>>>>> Stashed changes
     connection.release()
-    console.log("✅ Conexión a MySQL exitosa")
     return true
   } catch (error: any) {
     console.error("❌ Error de conexión a MySQL:", error.message)
-<<<<<<< Updated upstream
     console.error("🔧 Verifica que:")
     console.error("   - MySQL esté ejecutándose")
     console.error("   - Las credenciales sean correctas")
     console.error("   - La base de datos 'gofish' exista")
-=======
->>>>>>> Stashed changes
     return false
   }
 }

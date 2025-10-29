@@ -8,26 +8,11 @@ export async function POST(request: Request) {
   try {
     const { orderId, items, payer } = await request.json();
 
-    console.log("🔍 Datos recibidos para checkout:", { orderId, items: items?.length, payer });
-
     if (!orderId || !items || items.length === 0) {
       return NextResponse.json({ error: "Datos de pago incompletos" }, { status: 400 });
     }
 
-    // Verificar si Mercado Pago está configurado
-    if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
-      console.log("⚠️ Mercado Pago no configurado, usando modo simulación");
-      
-      // Modo simulación para desarrollo
-      return NextResponse.json({
-        preferenceId: "simulated-" + Date.now(),
-        initPoint: `${process.env.APP_URL || 'http://localhost:3000'}/checkout/simulated-payment?orderId=${orderId}`,
-        sandboxInitPoint: `${process.env.APP_URL || 'http://localhost:3000'}/checkout/simulated-payment?orderId=${orderId}`,
-        simulated: true
-      });
-    }
-
-    // Crear preferencia en Mercado Pago (solo si está configurado)
+    // Crear preferencia en Mercado Pago
     const preference = await createPaymentPreference({
       items: items.map((item: any) => ({
         title: item.name,
@@ -41,9 +26,9 @@ export async function POST(request: Request) {
         surname: payer.lastName,
       } : undefined,
       back_urls: {
-        success: `${process.env.APP_URL || 'http://localhost:3000'}/checkout/confirmation`,
-        failure: `${process.env.APP_URL || 'http://localhost:3000'}/checkout/error`,
-        pending: `${process.env.APP_URL || 'http://localhost:3000'}/checkout/pending`,
+        success: `${process.env.APP_URL}/checkout/confirmation`,
+        failure: `${process.env.APP_URL}/checkout/error`,
+        pending: `${process.env.APP_URL}/checkout/pending`,
       },
       auto_return: "approved",
       external_reference: orderId.toString(),
@@ -55,11 +40,8 @@ export async function POST(request: Request) {
       sandboxInitPoint: preference.sandbox_init_point,
     });
   } catch (error) {
-    console.error("❌ Error creating checkout:", error);
-    return NextResponse.json({ 
-      error: "Error al crear checkout",
-      details: error.message 
-    }, { status: 500 });
+    console.error("Error creating checkout:", error);
+    return NextResponse.json({ error: "Error al crear checkout" }, { status: 500 });
   }
 }
 
@@ -67,8 +49,6 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const { type, data } = await request.json();
-
-    console.log("🔔 Webhook recibido:", { type, data });
 
     if (type === "payment") {
       const paymentId = data.id;
@@ -83,7 +63,7 @@ export async function PUT(request: Request) {
         // Mapear estados de Mercado Pago a nuestros estados
         switch (payment.status) {
           case 'approved':
-            status = 'confirmed';
+            status = 'paid';
             break;
           case 'rejected':
             status = 'cancelled';
@@ -101,20 +81,16 @@ export async function PUT(request: Request) {
           [status, paymentId, orderId]
         );
 
-        console.log(`✅ Orden ${orderId} actualizada a estado: ${status}`);
+        console.log(`Orden ${orderId} actualizada a estado: ${status}`);
       }
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("❌ Error processing webhook:", error);
-    return NextResponse.json({ 
-      error: "Error processing webhook",
-      details: error.message 
-    }, { status: 500 });
+    console.error("Error processing webhook:", error);
+    return NextResponse.json({ error: "Error processing webhook" }, { status: 500 });
   }
 }
-
 // Endpoint para simular webhook en desarrollo
 export async function GET(request: Request) {
   // Solo permitir en desarrollo
@@ -127,11 +103,9 @@ export async function GET(request: Request) {
   const orderId = searchParams.get('orderId');
 
   if (action === 'simulate-payment' && orderId) {
-    console.log(`🎮 Simulando pago para orden: ${orderId}`);
-    
     // Simular pago exitoso
     await executeQuery(
-      `UPDATE orders SET status = 'confirmed', updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+      `UPDATE orders SET status = 'confirmed', payment_status = 'approved', updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
       [orderId]
     );
 
