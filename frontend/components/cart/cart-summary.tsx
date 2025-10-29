@@ -4,7 +4,8 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { ShoppingBag } from "lucide-react"
+import { ShoppingBag, RotateCcw } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 interface CartSummary {
   subtotal: number
@@ -21,6 +22,7 @@ export default function CartSummary() {
     itemCount: 0,
   })
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
   const fetchCartSummary = async () => {
     setLoading(true)
@@ -36,11 +38,8 @@ export default function CartSummary() {
       if (!response.ok) throw new Error("Error al cargar el resumen del carrito")
 
       const data = await response.json()
-
-      // Calcular el resumen con validación estricta
       const items = data.items || []
 
-      // Validar que los items sean válidos
       const validItems = items.filter(
         (item: any) =>
           item &&
@@ -58,7 +57,6 @@ export default function CartSummary() {
         return acc + item.price * item.quantity
       }, 0)
 
-      // Lógica de envío corregida
       let shipping = 0
       if (itemCount > 0) {
         shipping = subtotal >= 30000 ? 0 : 5000
@@ -90,7 +88,7 @@ export default function CartSummary() {
       setTimeout(() => {
         console.log("Actualizando resumen del carrito...")
         fetchCartSummary()
-      }, 150) // Delay ligeramente mayor para asegurar que la API se haya actualizado
+      }, 150)
     }
 
     const handleCartCleared = () => {
@@ -114,6 +112,24 @@ export default function CartSummary() {
       window.removeEventListener("cartCleared", handleCartCleared)
     }
   }, [])
+
+  // Función para manejar compra recurrente
+  const handleRecurringOrder = async () => {
+    try {
+      // Verificar si el usuario está autenticado
+      const authCheck = await fetch("/api/auth/check");
+      if (!authCheck.ok) {
+        router.push("/login");
+        return;
+      }
+
+      // Redirigir a página de órdenes recurrentes
+      router.push("/recurring-orders");
+    } catch (error) {
+      console.error("Error checking auth:", error);
+      router.push("/login");
+    }
+  }
 
   if (loading) {
     return (
@@ -150,13 +166,23 @@ export default function CartSummary() {
           <span>${summary.total.toLocaleString()}</span>
         </div>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="flex flex-col gap-3">
         <Link href="/checkout" className="w-full">
           <Button className="w-full bg-[#005f73] hover:bg-[#003d4d] h-12 text-lg" disabled={summary.itemCount === 0}>
             <ShoppingBag className="mr-2 h-5 w-5" />
             {summary.itemCount === 0 ? "Carrito vacío" : "Proceder al pago"}
           </Button>
         </Link>
+        
+        {/* BOTÓN DE COMPRA RECURRENTE EN EL RESUMEN */}
+        <Button
+          onClick={handleRecurringOrder}
+          variant="outline"
+          className="w-full border-green-200 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800"
+        >
+          <RotateCcw className="h-4 w-4 mr-2" />
+          Compra Recurrente
+        </Button>
       </CardFooter>
     </Card>
   )

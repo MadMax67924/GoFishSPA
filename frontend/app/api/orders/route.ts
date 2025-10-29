@@ -9,7 +9,19 @@ const JWT_SECRET = process.env.JWT_SECRET || "your-development-jwt-secret-key"
 export async function POST(request: Request) {
   try {
     const orderData = await request.json()
-    const { firstName, lastName, email, phone, address, city, region, postalCode, paymentMethod, notes, cartItems } = orderData
+    const { 
+      firstName, 
+      lastName, 
+      email, 
+      phone, 
+      address, 
+      city, 
+      region, 
+      postalCode, 
+      paymentMethod, 
+      notes, 
+      cartItems
+    } = orderData
 
     if (!firstName || !lastName || !email || !phone || !address || !city || !region || !paymentMethod) {
       return NextResponse.json({ error: "Todos los campos requeridos deben ser completados" }, { status: 400 })
@@ -39,15 +51,20 @@ export async function POST(request: Request) {
     }
 
     const subtotal = cartItems.reduce((acc: number, item: any) => acc + item.price * item.quantity, 0)
-
     const shipping = subtotal > 30000 ? 0 : 5000
     const total = subtotal + shipping
+    console.log(total)
+    console.log(orderData.region)
+    
     let status: string;
-    if (total < 20000 && region !== "Valparaíso") {
+    if (paymentMethod === "webpay") {
+      status = "pending"; 
+    } else if (total < 30000 && region !== "Valparaíso") {
       status = "cancelled";
     } else {
       status = "confirmed";
     }
+
     const orderNumber = `GF-${Date.now()}-${Math.floor(Math.random() * 1000)}`
 
     const orderSql = `
@@ -83,13 +100,14 @@ export async function POST(request: Request) {
         INSERT INTO order_items (order_id, product_id, product_name, product_price, quantity, subtotal)
         VALUES (?, ?, ?, ?, ?, ?)
       `
+      const itemTotal = item.price * item.quantity
       await executeQuery(orderItemSql, [
         orderId,
         item.product_id,
         item.name,
         item.price,
         item.quantity,
-        subtotal,
+        itemTotal, 
       ])
     }
 

@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,6 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
+import { validateRUT } from "@/lib/document-generator"
 
 export default function CheckoutForm() {
   const [formData, setFormData] = useState({
@@ -24,12 +24,15 @@ export default function CheckoutForm() {
     postalCode: "",
     paymentMethod: "transferencia",
     notes: "",
+    documentType: "boleta", // Nuevo campo
+    rut: "", // Nuevo campo
+    businessName: "", // Nuevo campo
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [rutError, setRutError] = useState("")
   const router = useRouter()
   const { toast } = useToast()
 
-  //Lista de regiones de Chile
   const regions = [
     "Arica y Parinacota",
     "Tarapacá",
@@ -49,31 +52,82 @@ export default function CheckoutForm() {
     "Magallanes y de la Antártica Chilena"
   ]
 
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const res = await fetch("/api/auth/me")
+        if (res.ok) {
+          const userData = await res.json()
+          setFormData(prev => ({
+            ...prev,
+            firstName: userData.firstName || "",
+            lastName: userData.lastName || "",
+            email: userData.email || "",
+          }))
+        }
+      } catch (error) {
+        console.error("Error cargando información del usuario:", error)
+      }
+    }
+
+    fetchUserInfo()
+  }, [])
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
+
+    // Validar RUT en tiempo real
+    if (name === 'rut') {
+      if (value && !validateRUT(value)) {
+        setRutError("RUT inválido. Formato: 12345678-9")
+      } else {
+        setRutError("")
+      }
+    }
   }
 
   const handleRadioChange = (value: string) => {
     setFormData((prev) => ({ ...prev, paymentMethod: value }))
   }
 
+  const handleDocumentTypeChange = (value: string) => {
+    setFormData((prev) => ({ 
+      ...prev, 
+      documentType: value,
+      // Limpiar campos de factura si se cambia a boleta
+      ...(value === 'boleta' && { rut: '', businessName: '' })
+    }))
+    setRutError("")
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
-    
     e.preventDefault()
     setIsSubmitting(true)
 
-    const res = await fetch("/api/cart")
-
-    if (!res.ok) throw new Error("Error al cargar el resumen del carrito")
-    const cart = await res.json()
-    const items = cart.items || []
-    const orderData = {
-    ...formData,
-    cartItems: items // Enviar como array directamente
-  };
-
     try {
+      const res = await fetch("/api/cart")
+      if (!res.ok) throw new Error("Error al cargar el resumen del carrito")
+    
+      const cart = await res.json()
+      const items = cart.items || []
+    
+      const subtotal = items.reduce((acc: number, item: any) => acc + item.price * item.quantity, 0)
+      const shipping = subtotal > 30000 ? 0 : 5000
+      const total = subtotal + shipping
+
+      const shouldRedirectToWhatsapp = total < 20000 && formData.region !== "Valparaíso"
+
+      const orderData = {
+        ...formData,
+        cartItems: items,
+        subtotal,
+        shipping,
+        total,
+        status: shouldRedirectToWhatsapp ? "pending" : 
+                formData.paymentMethod === "webpay" ? "pending" : "confirmed"
+      }
+
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: {
@@ -88,22 +142,56 @@ export default function CheckoutForm() {
         throw new Error(data.error || "Error al procesar el pedido")
       }
 
-      toast({
-        title: "¡Pedido realizado con éxito!",
-        description: `Número de pedido: ${data.orderNumber}`,
-      })
-      const subtotal = items.reduce((acc: number, item: any) => acc + item.price * item.quantity, 0)
-      const shipping = subtotal > 30000 ? 0 : 5000
-      const total = subtotal + shipping
+      if (shouldRedirectToWhatsapp) {
+        toast({
+          title: "Redirigiendo a WhatsApp",
+          description: "Tu pedido requiere confirmación adicional.",
+        })
       
-
-      if(total < 20000 && formData.region != "Valparaíso") {
         router.push(`/redireccion-whattsap?order=${data.orderId}`)
+        return
       }
-      // Redirigir a la página de confirmación
-      else {
-        router.push(`/checkout/confirmacion?order=${data.orderNumber}`)
+
+      if (formData.paymentMethod === "webpay") {
+        const completeOrderData = {
+          ...orderData,
+          id: data.orderId, 
+          order_number: data.orderNumber,
+          items: items 
+        }
+
+      toast({
+        title: "Creando sesión de pago",
+        description: "Estamos preparando tu checkout seguro...",
+      })
+
+      const paymentIntentRes = await fetch("/api/payment-intent", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          orderData: completeOrderData
+        }),
+      })
+
+      const paymentData = await paymentIntentRes.json()
+      
+      if (!paymentIntentRes.ok) {
+        throw new Error(paymentData.error || "Error al crear la sesión de pago")
       }
+
+      window.location.href = paymentData.checkoutUrl
+      return
+    }
+
+    toast({
+      title: "¡Pedido realizado con éxito!",
+      description: `Número de pedido: ${data.orderNumber}`,
+    })
+
+    router.push(`/checkout/confirmacion?order=${data.orderNumber}`)
+    
     } catch (error: any) {
       console.error("Error al procesar el pedido:", error)
       toast({
@@ -126,24 +214,107 @@ export default function CheckoutForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="firstName">Nombre</Label>
-              <Input id="firstName" name="firstName" value={formData.firstName} onChange={handleChange} required />
+              <Input 
+                id="firstName" 
+                name="firstName" 
+                value={formData.firstName} 
+                onChange={handleChange} 
+                required 
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="lastName">Apellido</Label>
-              <Input id="lastName" name="lastName" value={formData.lastName} onChange={handleChange} required />
+              <Input 
+                id="lastName" 
+                name="lastName" 
+                value={formData.lastName} 
+                onChange={handleChange} 
+                required 
+              />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="email">Correo electrónico</Label>
-              <Input id="email" name="email" type="email" value={formData.email} onChange={handleChange} required />
+              <Input 
+                id="email" 
+                name="email" 
+                type="email" 
+                value={formData.email} 
+                onChange={handleChange} 
+                required 
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Teléfono</Label>
-              <Input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} required />
+              <Input 
+                id="phone" 
+                name="phone" 
+                type="tel" 
+                value={formData.phone} 
+                onChange={handleChange} 
+                required 
+              />
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Documento tributario</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-3">
+            <Label>Tipo de documento</Label>
+            <RadioGroup 
+              value={formData.documentType} 
+              onValueChange={handleDocumentTypeChange} 
+              className="flex space-x-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="boleta" id="boleta" />
+                <Label htmlFor="boleta" className="cursor-pointer">Boleta</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="factura" id="factura" />
+                <Label htmlFor="factura" className="cursor-pointer">Factura</Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          {formData.documentType === 'factura' && (
+            <div className="space-y-4 border-t pt-4">
+              <div className="space-y-2">
+                <Label htmlFor="rut">RUT</Label>
+                <Input 
+                  id="rut" 
+                  name="rut" 
+                  value={formData.rut} 
+                  onChange={handleChange} 
+                  placeholder="12345678-9"
+                  required 
+                />
+                {rutError && (
+                  <p className="text-sm text-red-600">{rutError}</p>
+                )}
+                <p className="text-sm text-gray-500">Ingresa tu RUT con guión y dígito verificador</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="businessName">Razón Social</Label>
+                <Input 
+                  id="businessName" 
+                  name="businessName" 
+                  value={formData.businessName} 
+                  onChange={handleChange} 
+                  placeholder="Nombre de la empresa o persona"
+                  required 
+                />
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -154,13 +325,25 @@ export default function CheckoutForm() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="address">Dirección</Label>
-            <Input id="address" name="address" value={formData.address} onChange={handleChange} required />
+            <Input 
+              id="address" 
+              name="address" 
+              value={formData.address} 
+              onChange={handleChange} 
+              required 
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="city">Ciudad</Label>
-              <Input id="city" name="city" value={formData.city} onChange={handleChange} required />
+              <Input 
+                id="city" 
+                name="city" 
+                value={formData.city} 
+                onChange={handleChange} 
+                required 
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="region">Región</Label>
@@ -184,7 +367,13 @@ export default function CheckoutForm() {
 
           <div className="space-y-2">
             <Label htmlFor="postalCode">Código postal</Label>
-            <Input id="postalCode" name="postalCode" value={formData.postalCode} onChange={handleChange} required />
+            <Input 
+              id="postalCode" 
+              name="postalCode" 
+              value={formData.postalCode} 
+              onChange={handleChange} 
+              required 
+            />
           </div>
         </CardContent>
       </Card>
@@ -227,9 +416,10 @@ export default function CheckoutForm() {
         </CardContent>
       </Card>
 
-      <Button type="submit" 
-      className="w-full bg-[#005f73] hover:bg-[#003d4d] h-12 text-lg" 
-      disabled={isSubmitting}
+      <Button 
+        type="submit" 
+        className="w-full bg-[#005f73] hover:bg-[#003d4d] h-12 text-lg" 
+        disabled={isSubmitting}
       >
         {isSubmitting ? "Procesando..." : "Confirmar pedido"}
       </Button>
