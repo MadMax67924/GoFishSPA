@@ -81,18 +81,25 @@ export default function CheckoutForm() {
     e.preventDefault()
     setIsSubmitting(true)
 
+    console.log("🟡 Iniciando proceso de checkout...")
+
     try {
+      console.log("🔄 Obteniendo carrito...")
       const res = await fetch("/api/cart")
       if (!res.ok) throw new Error("Error al cargar el resumen del carrito")
     
       const cart = await res.json()
       const items = cart.items || []
+      console.log("📦 Items del carrito:", items)
     
       const subtotal = items.reduce((acc: number, item: any) => acc + item.price * item.quantity, 0)
       const shipping = subtotal > 30000 ? 0 : 5000
       const total = subtotal + shipping
 
+      console.log("💰 Totales - Subtotal:", subtotal, "Envío:", shipping, "Total:", total)
+
       const shouldRedirectToWhatsapp = total < 20000 && formData.region !== "Valparaíso"
+      console.log("📱 Redirigir a WhatsApp?", shouldRedirectToWhatsapp)
 
       const orderData = {
         ...formData,
@@ -104,6 +111,7 @@ export default function CheckoutForm() {
                 formData.paymentMethod === "webpay" ? "pending" : "confirmed"
       }
 
+      console.log("🔄 Creando orden en /api/orders...")
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: {
@@ -113,6 +121,7 @@ export default function CheckoutForm() {
       })
 
       const data = await response.json()
+      console.log("📊 Respuesta de /api/orders:", data)
 
       if (!response.ok) {
         throw new Error(data.error || "Error al procesar el pedido")
@@ -129,47 +138,92 @@ export default function CheckoutForm() {
       }
 
       if (formData.paymentMethod === "webpay") {
+        console.log("💳 Procesando pago con WebPay...")
+        
+        // ✅ CORRECCIÓN: Usar snake_case que espera payment-intent
         const completeOrderData = {
-          ...orderData,
-          id: data.orderId, 
+          id: data.orderId,
           order_number: data.orderNumber,
-          items: items 
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+          region: formData.region,
+          postal_code: formData.postalCode,
+          payment_method: "webpay",
+          notes: formData.notes,
+          subtotal: subtotal,
+          shipping: shipping,
+          total: total,
+          status: "pending",
+          items: items.map((item: any) => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price
+          }))
         }
 
-      toast({
-        title: "Creando sesión de pago",
-        description: "Estamos preparando tu checkout seguro...",
-      })
+        console.log("📦 Datos enviados a payment-intent:", completeOrderData)
+        console.log("🔍 Order ID:", data.orderId)
+        console.log("🔍 Order Number:", data.orderNumber)
 
-      const paymentIntentRes = await fetch("/api/payment-intent", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          orderData: completeOrderData
-        }),
-      })
+        toast({
+          title: "Creando sesión de pago",
+          description: "Estamos preparando tu checkout seguro...",
+        })
 
-      const paymentData = await paymentIntentRes.json()
-      
-      if (!paymentIntentRes.ok) {
-        throw new Error(paymentData.error || "Error al crear la sesión de pago")
+        console.log("🔄 Llamando a /api/payment-intent...")
+        
+        try {
+          const paymentIntentRes = await fetch("/api/payment-intent", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              orderData: completeOrderData
+            }),
+          })
+
+          console.log("📡 Respuesta de payment-intent recibida, status:", paymentIntentRes.status)
+
+          if (!paymentIntentRes.ok) {
+            const errorData = await paymentIntentRes.json()
+            console.error("❌ Error en payment-intent:", errorData)
+            throw new Error(errorData.error || "Error al crear la sesión de pago")
+          }
+
+          const paymentData = await paymentIntentRes.json()
+          console.log("📊 Datos de payment-intent:", paymentData)
+          
+          console.log("✅ Redirigiendo a Stripe:", paymentData.checkoutUrl)
+          
+          // Forzar la redirección inmediata
+          if (paymentData.checkoutUrl) {
+            window.location.href = paymentData.checkoutUrl
+          } else {
+            throw new Error("No se recibió URL de checkout")
+          }
+          return
+          
+        } catch (paymentError) {
+          console.error("💥 Error en el proceso de pago:", paymentError)
+          throw paymentError
+        }
       }
 
-      window.location.href = paymentData.checkoutUrl
-      return
-    }
+      console.log("✅ Pedido confirmado sin pago online")
+      toast({
+        title: "¡Pedido realizado con éxito!",
+        description: `Número de pedido: ${data.orderNumber}`,
+      })
 
-    toast({
-      title: "¡Pedido realizado con éxito!",
-      description: `Número de pedido: ${data.orderNumber}`,
-    })
-
-    router.push(`/checkout/confirmacion?order=${data.orderNumber}`)
-    
+      router.push(`/checkout/confirmacion?order=${data.orderNumber}`)
+      
     } catch (error: any) {
-      console.error("Error al procesar el pedido:", error)
+      console.error("❌ Error al procesar el pedido:", error)
       toast({
         title: "Error",
         description: error.message || "Hubo un problema al procesar tu pedido. Por favor, inténtalo de nuevo.",
@@ -177,6 +231,7 @@ export default function CheckoutForm() {
       })
     } finally {
       setIsSubmitting(false)
+      console.log("🔚 Proceso de checkout finalizado")
     }
   }
 

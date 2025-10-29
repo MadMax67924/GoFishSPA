@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { executeQuery } from "@/lib/mysql"
-
 import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-development-jwt-secret-key"
@@ -118,43 +117,43 @@ export async function POST(request: Request) {
       path: "/",
     })
 
-    // 📨 ENVÍO DE CORREO DE CONFIRMACIÓN
-    try {
-      console.log("📦 Enviando correo de confirmación de pedido...")
-      console.log("👉 URL destino:", `${process.env.NEXT_PUBLIC_BASE_URL}/api/orders/confirm-email`)
+    // 📨 ENVÍO DE CORREO DE CONFIRMACIÓN (ASÍNCRONO Y NO BLOQUEANTE)
+    setTimeout(async () => {
+      try {
+        console.log("📦 Enviando correo de confirmación de pedido...")
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/orders/confirm-email`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            name: `${firstName} ${lastName}`,
+            orderNumber,
+            total,
+            items: cartItems.map((item: any) => ({
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price,
+            })),
+          }),
+        })
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/orders/confirm-email`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          name: `${firstName} ${lastName}`,
-          orderNumber,
-          total,
-          items: cartItems.map((item: any) => ({
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price,
-          })),
-        }),
-      })
+        const result = await response.json()
+        console.log("✅ Respuesta del correo:", result)
+      } catch (emailError) {
+        console.error("❌ Error al enviar correo de confirmación:", emailError)
+      }
+    }, 100) // Pequeño delay para no bloquear
 
-      const result = await response.json()
-      console.log("✅ Respuesta del correo:", result)
-    } catch (emailError) {
-      console.error("❌ Error al enviar correo de confirmación:", emailError)
-    }
-
-  return NextResponse.json({
-    success: true,
-    orderNumber,
-    orderId,
-    total,
-  })
-} catch (error) {
-  console.error("Error al crear pedido:", error)
-  return NextResponse.json({ error: "Error al crear pedido" }, { status: 500 })
-}
+    return NextResponse.json({
+      success: true,
+      orderNumber,
+      orderId,
+      total,
+    })
+  } catch (error) {
+    console.error("Error al crear pedido:", error)
+    return NextResponse.json({ error: "Error al crear pedido" }, { status: 500 })
+  }
 }
 
 export async function GET() {

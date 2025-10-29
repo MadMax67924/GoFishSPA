@@ -13,9 +13,7 @@ async function setupDatabase() {
       user: process.env.DB_USER || "root",
       password: process.env.DB_PASSWORD || "toki1801",
       database: process.env.DB_NAME || "gofish",
-      charset: "utf8mb4",
-      acquireTimeout: 60000,
-      timeout: 60000,
+      charset: "utf8mb4"
     }
 
     console.log(` Conectando a ${config.host}:${config.port} como ${config.user}`)
@@ -30,9 +28,28 @@ async function setupDatabase() {
 
     console.log(" Tablas existentes:", existingTables.length > 0 ? existingTables : "ninguna")
 
-    // Crear tabla de usuarios actualizada con nuevas columnas de seguridad
-    if (!existingTables.includes("users")) {
-      console.log(" Creando tabla users...")
+    // VERIFICAR ESTRUCTURA DE TABLA USERS
+    console.log("🔍 Verificando estructura de tabla users...")
+    const [userColumns] = await connection.execute(`
+      SELECT COLUMN_NAME 
+      FROM information_schema.COLUMNS 
+      WHERE TABLE_SCHEMA = ? 
+      AND TABLE_NAME = 'users'
+    `, [config.database])
+
+    const userColumnNames = userColumns.map(col => col.COLUMN_NAME)
+    console.log(" Columnas en users:", userColumnNames)
+
+    // Si no existe la tabla users o le falta la columna id, crearla
+    if (!existingTables.includes("users") || !userColumnNames.includes("id")) {
+      console.log(" Creando/actualizando tabla users...")
+      
+      // Si la tabla existe pero no tiene la estructura correcta, hacer drop
+      if (existingTables.includes("users")) {
+        console.log(" Eliminando tabla users existente con estructura incorrecta...")
+        await connection.execute("DROP TABLE IF EXISTS users")
+      }
+      
       await connection.execute(`
         CREATE TABLE users (
           id INT AUTO_INCREMENT PRIMARY KEY,
@@ -65,83 +82,60 @@ async function setupDatabase() {
           INDEX idx_account_locked (account_locked_until)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `)
-      console.log(" Tabla users creada")
+      console.log(" Tabla users creada/actualizada")
+    } else {
+      console.log("✅ Tabla users ya existe con estructura correcta")
     }
 
-    // Crear tabla de autenticación multifactor (MFA)
+    // Crear tabla de autenticación multifactor (MFA) - SOLO si users tiene la estructura correcta
     if (!existingTables.includes("usuarios_mfa")) {
       console.log(" Creando tabla usuarios_mfa...")
       await connection.execute(`
-    CREATE TABLE usuarios_mfa (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      id_usuario INT NOT NULL,
-      secret VARCHAR(255) NOT NULL,
-      activo BOOLEAN DEFAULT FALSE,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      FOREIGN KEY (id_usuario) REFERENCES users(id) ON DELETE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-  `)
+        CREATE TABLE usuarios_mfa (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          id_usuario INT NOT NULL,
+          secret VARCHAR(255) NOT NULL,
+          activo BOOLEAN DEFAULT FALSE,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          FOREIGN KEY (id_usuario) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
       console.log(" Tabla usuarios_mfa creada")
+    } else {
+      console.log("✅ Tabla usuarios_mfa ya existe")
     }
 
-    // Crear tabla de productos
-    if (!existingTables.includes("products")) {
-      console.log(" Creando tabla products...")
-      await connection.execute(`
-        CREATE TABLE products (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          name VARCHAR(255) NOT NULL,
-          description TEXT,
-          price DECIMAL(10, 2) NOT NULL,
-          image VARCHAR(500),
-          category ENUM('pescados', 'mariscos') NOT NULL,
-          stock INT DEFAULT 0,
-          featured BOOLEAN DEFAULT FALSE,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-      `)
-      console.log(" Tabla products creada")
-    }
+    // VERIFICAR Y AGREGAR COLUMNAS FALTANTES EN ORDERS
+    console.log("🔍 Verificando columnas faltantes en tabla orders...")
+    
+    if (existingTables.includes("orders")) {
+      const columnsToAdd = [
+        { name: 'stripe_payment_intent_id', type: 'VARCHAR(255) NULL' },
+        { name: 'invoice_pdf_path', type: 'VARCHAR(500) NULL' }
+      ]
 
-    // Crear tabla de carritos
-    if (!existingTables.includes("carts")) {
-      console.log(" Creando tabla carts...")
-      await connection.execute(`
-        CREATE TABLE carts (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          cart_id VARCHAR(255) UNIQUE NOT NULL,
-          user_id INT NULL,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-      `)
-      console.log(" Tabla carts creada")
-    }
+      for (const column of columnsToAdd) {
+        const [columnExists] = await connection.execute(`
+          SELECT COLUMN_NAME 
+          FROM information_schema.COLUMNS 
+          WHERE TABLE_SCHEMA = ? 
+          AND TABLE_NAME = 'orders' 
+          AND COLUMN_NAME = ?
+        `, [config.database, column.name])
 
-    // Crear tabla de items del carrito
-    if (!existingTables.includes("cart_items")) {
-      console.log(" Creando tabla cart_items...")
-      await connection.execute(`
-        CREATE TABLE cart_items (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          cart_id INT NOT NULL,
-          product_id INT NOT NULL,
-          quantity INT NOT NULL DEFAULT 1,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          FOREIGN KEY (cart_id) REFERENCES carts(id) ON DELETE CASCADE,
-          FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-          UNIQUE KEY unique_cart_product (cart_id, product_id)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-      `)
-      console.log(" Tabla cart_items creada")
-    }
-
-    // Crear tabla de pedidos
-    if (!existingTables.includes("orders")) {
+        if (columnExists.length === 0) {
+          console.log(`📝 Agregando columna ${column.name}...`)
+          await connection.execute(`
+            ALTER TABLE orders 
+            ADD COLUMN ${column.name} ${column.type}
+          `)
+          console.log(`✅ Columna ${column.name} agregada`)
+        } else {
+          console.log(`✅ Columna ${column.name} ya existe`)
+        }
+      }
+    } else {
       console.log(" Creando tabla orders...")
       await connection.execute(`
         CREATE TABLE orders (
@@ -163,6 +157,7 @@ async function setupDatabase() {
           total DECIMAL(10, 2) NOT NULL,
           status ENUM('pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled') DEFAULT 'pending',
           stripe_payment_intent_id VARCHAR(255) NULL,
+          invoice_pdf_path VARCHAR(500) NULL,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
           FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
@@ -171,7 +166,7 @@ async function setupDatabase() {
       console.log(" Tabla orders creada")
     }
 
-    // Crear tabla de items de pedidos
+    // VERIFICAR TABLA ORDER_ITEMS
     if (!existingTables.includes("order_items")) {
       console.log(" Creando tabla order_items...")
       await connection.execute(`
@@ -189,9 +184,72 @@ async function setupDatabase() {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `)
       console.log(" Tabla order_items creada")
+    } else {
+      console.log("✅ Tabla order_items ya existe")
     }
 
-    // Crear tabla de contactos
+    // VERIFICAR TABLA PRODUCTS
+    if (!existingTables.includes("products")) {
+      console.log(" Creando tabla products...")
+      await connection.execute(`
+        CREATE TABLE products (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          description TEXT,
+          price DECIMAL(10, 2) NOT NULL,
+          image VARCHAR(500),
+          category ENUM('pescados', 'mariscos') NOT NULL,
+          stock INT DEFAULT 0,
+          featured BOOLEAN DEFAULT FALSE,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+      console.log(" Tabla products creada")
+    } else {
+      console.log("✅ Tabla products ya existe")
+    }
+
+    // VERIFICAR TABLA CARTS
+    if (!existingTables.includes("carts")) {
+      console.log(" Creando tabla carts...")
+      await connection.execute(`
+        CREATE TABLE carts (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          cart_id VARCHAR(255) UNIQUE NOT NULL,
+          user_id INT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+      console.log(" Tabla carts creada")
+    } else {
+      console.log("✅ Tabla carts ya existe")
+    }
+
+    // VERIFICAR TABLA CART_ITEMS
+    if (!existingTables.includes("cart_items")) {
+      console.log(" Creando tabla cart_items...")
+      await connection.execute(`
+        CREATE TABLE cart_items (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          cart_id INT NOT NULL,
+          product_id INT NOT NULL,
+          quantity INT NOT NULL DEFAULT 1,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          FOREIGN KEY (cart_id) REFERENCES carts(id) ON DELETE CASCADE,
+          FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+          UNIQUE KEY unique_cart_product (cart_id, product_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+      console.log(" Tabla cart_items creada")
+    } else {
+      console.log("✅ Tabla cart_items ya existe")
+    }
+
+    // VERIFICAR TABLA CONTACTS
     if (!existingTables.includes("contacts")) {
       console.log(" Creando tabla contacts...")
       await connection.execute(`
@@ -206,151 +264,45 @@ async function setupDatabase() {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `)
       console.log(" Tabla contacts creada")
-    }
-
-    // Crear tabla de reseñas
-    if (!existingTables.includes("reviews")) {
-      console.log(" Creando tabla reviews...")
-      await connection.execute(`
-        CREATE TABLE reviews (
-          id VARCHAR(255) NOT NULL,
-          productId VARCHAR(255) NOT NULL,
-          texto VARCHAR(255) NOT NULL,
-          imagen VARCHAR(255) NULL,
-          fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          aprovado BOOLEAN DEFAULT FALSE,
-          rating INT NOT NULL
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-      `)
-      console.log(" Tabla reviews creada")
-    }
-
-    // Crear tabla de sugerencias
-    if (!existingTables.includes("sugerencias")) {
-      console.log(" Creando tabla sugerencias...")
-      await connection.execute(`
-        CREATE TABLE sugerencias (
-          id VARCHAR(255) PRIMARY KEY,
-          texto VARCHAR(255) NOT NULL,
-          imagen VARCHAR(255) NULL,
-          fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-      `)
-      console.log(" Tabla sugerencias creada")
+    } else {
+      console.log("✅ Tabla contacts ya existe")
     }
 
     // Crear índices adicionales para mejorar el rendimiento
     console.log(" Creando índices adicionales...")
     try {
-      await connection.execute("CREATE INDEX IF NOT EXISTS idx_products_category ON products(category)")
-      await connection.execute("CREATE INDEX IF NOT EXISTS idx_products_featured ON products(featured)")
-      await connection.execute("CREATE INDEX IF NOT EXISTS idx_products_price ON products(price)")
-      await connection.execute("CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)")
-      await connection.execute("CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at)")
-      await connection.execute("CREATE INDEX IF NOT EXISTS idx_cart_items_cart_id ON cart_items(cart_id)")
-      await connection.execute("CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id)")
-      await connection.execute("CREATE INDEX IF NOT EXISTS idx_sugerencias_fecha ON sugerencias(fecha)")
-      await connection.execute("CREATE INDEX IF NOT EXISTS idx_stripe_payment_intent_id ON orders(stripe_payment_intent_id)")
-      console.log(" Índices creados correctamente")
+      if (existingTables.includes("products")) {
+        await connection.execute("CREATE INDEX IF NOT EXISTS idx_products_category ON products(category)")
+        await connection.execute("CREATE INDEX IF NOT EXISTS idx_products_featured ON products(featured)")
+        await connection.execute("CREATE INDEX IF NOT EXISTS idx_products_price ON products(price)")
+      }
+      if (existingTables.includes("orders")) {
+        await connection.execute("CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)")
+        await connection.execute("CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at)")
+        await connection.execute("CREATE INDEX IF NOT EXISTS idx_stripe_payment_intent_id ON orders(stripe_payment_intent_id)")
+        await connection.execute("CREATE INDEX IF NOT EXISTS idx_invoice_pdf_path ON orders(invoice_pdf_path)")
+      }
+      if (existingTables.includes("cart_items")) {
+        await connection.execute("CREATE INDEX IF NOT EXISTS idx_cart_items_cart_id ON cart_items(cart_id)")
+      }
+      if (existingTables.includes("order_items")) {
+        await connection.execute("CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id)")
+      }
+      if (existingTables.includes("sugerencias")) {
+        await connection.execute("CREATE INDEX IF NOT EXISTS idx_sugerencias_fecha ON sugerencias(fecha)")
+      }
+      console.log(" Índices creados/verificados correctamente")
     } catch (error) {
       console.log(" Los índices ya existen o hubo un error al crearlos:", error.message)
     }
 
     // Verificar si ya hay productos
     const [productCount] = await connection.execute("SELECT COUNT(*) as count FROM products")
-
-    if (productCount[0].count === 0) {
-      console.log(" Insertando productos de ejemplo...")
-
-      const products = [
-        [
-          "Salmón Fresco",
-          "Salmón fresco del día, ideal para preparaciones crudas como sushi o ceviches. Producto de primera calidad capturado de forma sostenible.",
-          8990.00,
-          "/images/salmon.jpg",
-          "pescados",
-          0,
-          true,
-        ],
-        [
-          "Merluza Austral",
-          "Merluza austral de aguas profundas, perfecta para frituras y guisos. Pescado blanco de sabor suave y textura firme.",
-          5990.00,
-          "/images/merluza.jpg",
-          "pescados",
-          40,
-          true,
-        ],
-        [
-          "Reineta",
-          "Reineta fresca, pescado blanco de sabor suave ideal para hornear.",
-          6490.00,
-          "/images/reineta.jpg",
-          "pescados",
-          35,
-          true,
-        ],
-        [
-          "Camarones",
-          "Camarones ecuatorianos de cultivo, perfectos para cócteles y paellas.",
-          12990.00,
-          "/images/camarones.jpg",
-          "mariscos",
-          30,
-          true,
-        ],
-        [
-          "Congrio",
-          "Congrio dorado, ideal para caldillo y frituras.",
-          9990.00,
-          "/images/congrio.jpg",
-          "pescados",
-          25,
-          false,
-        ],
-        [
-          "Choritos",
-          "Choritos frescos de la zona, perfectos para preparar a la marinera.",
-          4990.00,
-          "/images/choritos.jpg",
-          "mariscos",
-          60,
-          false,
-        ],
-        [
-          "Pulpo",
-          "Pulpo fresco, ideal para ensaladas y preparaciones a la parrilla.",
-          15990.00,
-          "/images/pulpo.jpg",
-          "mariscos",
-          15,
-          false,
-        ],
-        [
-          "Atún",
-          "Atún fresco, perfecto para tataki y preparaciones a la plancha.",
-          11990.00,
-          "/images/atun.jpg",
-          "pescados",
-          20,
-          false,
-        ],
-      ]
-
-      for (const product of products) {
-        await connection.execute(
-          "INSERT INTO products (name, description, price, image, category, stock, featured) VALUES (?, ?, ?, ?, ?, ?, ?)",
-          product,
-        )
-      }
-
-      console.log(" Productos insertados correctamente")
-    } else {
-      console.log(` Ya existen ${productCount[0].count} productos en la base de datos`)
-    }
+    console.log(`📊 Productos existentes: ${productCount[0].count}`)
 
     // Verificar si ya hay usuarios admin
     const [adminCount] = await connection.execute('SELECT COUNT(*) as count FROM users WHERE role = "admin"')
+    console.log(`👤 Usuarios admin existentes: ${adminCount[0].count}`)
 
     if (adminCount[0].count === 0) {
       console.log(" Creando usuario administrador...")
@@ -371,8 +323,8 @@ async function setupDatabase() {
     }
 
     // Resumen final
-    console.log("\n ¡Base de datos configurada correctamente!")
-    console.log(" Resumen:")
+    console.log("\n🎉 ¡Base de datos configurada correctamente!")
+    console.log("📋 Resumen:")
 
     const [finalProductCount] = await connection.execute("SELECT COUNT(*) as count FROM products")
     const [finalUserCount] = await connection.execute("SELECT COUNT(*) as count FROM users")
@@ -383,22 +335,35 @@ async function setupDatabase() {
     console.log(`   - Tablas: ${finalTables.length}`)
     console.log("   - Base de datos: gofish")
     console.log("   - Host: 127.0.0.1:3306")
+
+    // Verificar específicamente las columnas de orders
+    console.log("\n🔍 Verificación final de columnas en orders:")
+    const [orderColumns] = await connection.execute(`
+      SELECT COLUMN_NAME 
+      FROM information_schema.COLUMNS 
+      WHERE TABLE_SCHEMA = ? 
+      AND TABLE_NAME = 'orders'
+      ORDER BY ORDINAL_POSITION
+    `, [config.database])
+    
+    console.log(" Columnas en orders:", orderColumns.map(col => col.COLUMN_NAME))
+
   } catch (error) {
-    console.error(" Error al configurar la base de datos:")
+    console.error("❌ Error al configurar la base de datos:")
     console.error("   Mensaje:", error.message)
     console.error("   Código:", error.code)
 
     if (error.code === "ECONNREFUSED") {
-      console.error("\n Sugerencias:")
+      console.error("\n💡 Sugerencias:")
       console.error("   - Verifica que MySQL esté ejecutándose")
       console.error("   - Confirma que el puerto 3306 esté disponible")
       console.error("   - Revisa las credenciales de conexión")
     } else if (error.code === "ER_ACCESS_DENIED_ERROR") {
-      console.error("\n Sugerencias:")
+      console.error("\n💡 Sugerencias:")
       console.error("   - Verifica el usuario y contraseña")
       console.error("   - Confirma los permisos del usuario")
     } else if (error.code === "ER_BAD_DB_ERROR") {
-      console.error("\n Sugerencias:")
+      console.error("\n💡 Sugerencias:")
       console.error("   - Crea la base de datos 'gofish' manualmente")
       console.error("   - Verifica el nombre de la base de datos")
     }
@@ -407,7 +372,7 @@ async function setupDatabase() {
   } finally {
     if (connection) {
       await connection.end()
-      console.log(" Conexión cerrada")
+      console.log("🔒 Conexión cerrada")
     }
   }
 }

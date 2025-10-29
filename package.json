@@ -6,12 +6,19 @@
     "build": "npm --prefix frontend run build",
     "start": "npm --prefix frontend run start",
     "lint": "npm --prefix frontend run lint",
-    "db:setup": "npm --prefix frontend run setup-db"
+    "db:setup": "npm --prefix frontend run setup-db",
+    "backup:manual": "node scripts/backup/backup-database.js",
+    "backup:start": "node scripts/backup/backup-scheduler.js",
+    "backup:monitor": "node scripts/backup/backup-monitor.js",
+    "backup:status": "node scripts/backup/backup-monitor.js --status",
+    "backup:setup": "node scripts/backup/setup-backup.js"
   },
   "dependencies": {
     "@types/node-fetch": "^2.6.13",
     "class-variance-authority": "^0.7.1",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "pdfkit": "^0.17.2",
+    "pdfkit-table": "^0.1.99"
   },
   "devDependencies": {
     "@types/express": "^5.0.4"
