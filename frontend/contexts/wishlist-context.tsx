@@ -5,10 +5,13 @@ interface WishlistItem {
   id: number
   name: string
   price: number
-  image?: string
-  product_id?: number // Solo para items de DB
-  user_id?: number    // Solo para items de DB
-  created_at?: string // Solo para items de DB
+  image?: string        // ← Para que funcione product.image
+  description?: string  // ← Para que funcione product.description
+  category?: string     // ← Para que funcione product.category
+  stock?: number        // ← Para que funcione product.stock
+  product_id?: number   // Solo para items de DB
+  user_id?: number      // Solo para items de DB
+  created_at?: string   // Solo para items de DB
 }
 
 interface WishlistContextType {
@@ -16,6 +19,7 @@ interface WishlistContextType {
   itemCount: number
   addToWishlist: (product: any) => Promise<void>
   removeFromWishlist: (productId: number) => Promise<void>
+  clearWishlist: () => Promise<void> // ← AÑADIR ESTA LÍNEA
   isInWishlist: (productId: number) => boolean
   loading: boolean
   error: string | null
@@ -187,6 +191,36 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const clearWishlist = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      if (isLoggedIn) {
+        // Usuario logueado: Limpiar base de datos
+        const response = await fetch('/api/wishlist/clear', {
+          method: 'DELETE',
+        })
+        
+        if (!response.ok) {
+          throw new Error('Error al limpiar lista de deseos')
+        }
+      } else {
+        // Usuario no logueado: Limpiar localStorage
+        localStorage.removeItem('gofish-wishlist')
+      }
+      
+      // Limpiar estado local
+      setItems([])
+    } catch (err) {
+      console.error('Error clearing wishlist:', err)
+      setError(err instanceof Error ? err.message : 'Error al limpiar lista')
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const isInWishlist = (productId: number): boolean => {
     if (isLoggedIn) {
       return items.some(item => (item.product_id || item.id) === productId)
@@ -213,6 +247,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     itemCount: items.length,
     addToWishlist,
     removeFromWishlist,
+    clearWishlist, // ← AÑADIR ESTA LÍNEA
     isInWishlist,
     loading,
     error,
