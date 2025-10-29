@@ -9,24 +9,24 @@ const JWT_SECRET = process.env.JWT_SECRET || "your-development-jwt-secret-key"
 export async function POST(request: Request) {
   try {
     const orderData = await request.json()
-    const { 
-      firstName, 
-      lastName, 
-      email, 
-      phone, 
-      address, 
-      city, 
-      region, 
-      postalCode, 
-      paymentMethod, 
-      notes, 
+    const {
+      firstName,
+      lastName,
+      email,
+      phone,
+      address,
+      city,
+      region,
+      postalCode,
+      paymentMethod,
+      notes,
       cartItems
     } = orderData
 
     if (!firstName || !lastName || !email || !phone || !address || !city || !region || !paymentMethod) {
       return NextResponse.json({ error: "Todos los campos requeridos deben ser completados" }, { status: 400 })
     }
-    
+
     const cookieStore = await cookies()
     const cartId = cookieStore.get("cartId")?.value
     const token = cookieStore.get("authToken")?.value;
@@ -55,10 +55,10 @@ export async function POST(request: Request) {
     const total = subtotal + shipping
     console.log(total)
     console.log(orderData.region)
-    
+
     let status: string;
     if (paymentMethod === "webpay") {
-      status = "pending"; 
+      status = "pending";
     } else if (total < 30000 && region !== "Valparaíso") {
       status = "cancelled";
     } else {
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
 
     const orderResult = await executeQuery(orderSql, [
       orderNumber,
-      userId, 
+      userId,
       firstName,
       lastName,
       email,
@@ -94,7 +94,7 @@ export async function POST(request: Request) {
     ])
 
     const orderId = (orderResult as any).insertId
-    
+
     for (const item of cartItems as any[]) {
       const orderItemSql = `
         INSERT INTO order_items (order_id, product_id, product_name, product_price, quantity, subtotal)
@@ -107,7 +107,7 @@ export async function POST(request: Request) {
         item.name,
         item.price,
         item.quantity,
-        itemTotal, 
+        itemTotal,
       ])
     }
 
@@ -120,7 +120,10 @@ export async function POST(request: Request) {
 
     // 📨 ENVÍO DE CORREO DE CONFIRMACIÓN
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/order/confirm-email`, {
+      console.log("📦 Enviando correo de confirmación de pedido...")
+      console.log("👉 URL destino:", `${process.env.NEXT_PUBLIC_BASE_URL}/api/orders/confirm-email`)
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/orders/confirm-email`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -135,21 +138,23 @@ export async function POST(request: Request) {
           })),
         }),
       })
+
+      const result = await response.json()
+      console.log("✅ Respuesta del correo:", result)
     } catch (emailError) {
-      console.error("Error al enviar correo de confirmación:", emailError)
-      // no interrumpimos el flujo de compra, solo registramos el fallo
+      console.error("❌ Error al enviar correo de confirmación:", emailError)
     }
 
-    return NextResponse.json({
-      success: true,
-      orderNumber,
-      orderId,
-      total,
-    })
-  } catch (error) {
-    console.error("Error al crear pedido:", error)
-    return NextResponse.json({ error: "Error al crear pedido" }, { status: 500 })
-  }
+  return NextResponse.json({
+    success: true,
+    orderNumber,
+    orderId,
+    total,
+  })
+} catch (error) {
+  console.error("Error al crear pedido:", error)
+  return NextResponse.json({ error: "Error al crear pedido" }, { status: 500 })
+}
 }
 
 export async function GET() {
