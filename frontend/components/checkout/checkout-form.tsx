@@ -10,6 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
+import { validateRUT } from "@/lib/document-generator"
 
 export default function CheckoutForm() {
   const [formData, setFormData] = useState({
@@ -23,8 +24,12 @@ export default function CheckoutForm() {
     postalCode: "",
     paymentMethod: "transferencia",
     notes: "",
+    documentType: "boleta", // Nuevo campo
+    rut: "", // Nuevo campo
+    businessName: "", // Nuevo campo
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [rutError, setRutError] = useState("")
   const router = useRouter()
   const { toast } = useToast()
 
@@ -71,10 +76,29 @@ export default function CheckoutForm() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
+
+    // Validar RUT en tiempo real
+    if (name === 'rut') {
+      if (value && !validateRUT(value)) {
+        setRutError("RUT inválido. Formato: 12345678-9")
+      } else {
+        setRutError("")
+      }
+    }
   }
 
   const handleRadioChange = (value: string) => {
     setFormData((prev) => ({ ...prev, paymentMethod: value }))
+  }
+
+  const handleDocumentTypeChange = (value: string) => {
+    setFormData((prev) => ({ 
+      ...prev, 
+      documentType: value,
+      // Limpiar campos de factura si se cambia a boleta
+      ...(value === 'boleta' && { rut: '', businessName: '' })
+    }))
+    setRutError("")
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -234,6 +258,63 @@ export default function CheckoutForm() {
               />
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Documento tributario</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-3">
+            <Label>Tipo de documento</Label>
+            <RadioGroup 
+              value={formData.documentType} 
+              onValueChange={handleDocumentTypeChange} 
+              className="flex space-x-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="boleta" id="boleta" />
+                <Label htmlFor="boleta" className="cursor-pointer">Boleta</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="factura" id="factura" />
+                <Label htmlFor="factura" className="cursor-pointer">Factura</Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          {formData.documentType === 'factura' && (
+            <div className="space-y-4 border-t pt-4">
+              <div className="space-y-2">
+                <Label htmlFor="rut">RUT</Label>
+                <Input 
+                  id="rut" 
+                  name="rut" 
+                  value={formData.rut} 
+                  onChange={handleChange} 
+                  placeholder="12345678-9"
+                  required 
+                />
+                {rutError && (
+                  <p className="text-sm text-red-600">{rutError}</p>
+                )}
+                <p className="text-sm text-gray-500">Ingresa tu RUT con guión y dígito verificador</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="businessName">Razón Social</Label>
+                <Input 
+                  id="businessName" 
+                  name="businessName" 
+                  value={formData.businessName} 
+                  onChange={handleChange} 
+                  placeholder="Nombre de la empresa o persona"
+                  required 
+                />
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

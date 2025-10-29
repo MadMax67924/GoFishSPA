@@ -159,4 +159,145 @@ INSERT IGNORE INTO products (name, description, price, image, category, stock, f
 INSERT IGNORE INTO users (name, email, password, role, email_verified) VALUES
 ('Administrador GoFish', 'admin@gofish.cl', '$2b$12$oY8XRaFPgaAroDCsM.YBbet.NMVS6CzyQIA6hitFYWMR7.riMZ35S', 'admin', TRUE);
 
+-- =============================================================================
+-- NUEVAS TABLAS PARA MERCADO PAGO Y TARJETAS TOKENIZADAS
+-- =============================================================================
+
+-- Tabla para tarjetas tokenizadas de usuarios
+CREATE TABLE IF NOT EXISTS user_cards (
+    id VARCHAR(36) PRIMARY KEY,
+    user_id INT NOT NULL,
+    card_token VARCHAR(255) NOT NULL,
+    last_four_digits VARCHAR(4) NOT NULL,
+    expiration_month INT NOT NULL,
+    expiration_year INT NOT NULL,
+    cardholder_name VARCHAR(255) NOT NULL,
+    card_type VARCHAR(50),
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_card_token (card_token),
+    INDEX idx_user_cards_user_id (user_id),
+    INDEX idx_user_cards_active (is_active)
+);
+
+-- =============================================================================
+-- TABLAS PARA COMPRAS RECURRENTES (Caso de uso Nº62)
+-- =============================================================================
+
+-- Tabla de suscripciones/recurrencias
+CREATE TABLE IF NOT EXISTS recurring_orders (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    user_id INT NOT NULL,
+    product_id INT NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    
+    -- Configuración de recurrencia
+    frequency ENUM('weekly', 'biweekly', 'monthly') NOT NULL,
+    interval_value INT DEFAULT 1, -- Cada 1 semana, 2 semanas, etc.
+    
+    -- Próxima ejecución
+    next_delivery_date DATE NOT NULL,
+    
+    -- Información de envío y pago
+    shipping_address JSON NOT NULL,
+    payment_method VARCHAR(100) NOT NULL,
+    card_token VARCHAR(255) NULL, -- Tarjeta guardada para pagos automáticos
+    
+    -- Estado y configuración
+    status ENUM('active', 'paused', 'cancelled') DEFAULT 'active',
+    max_occurrences INT NULL, -- Límite de repeticiones (NULL = infinito)
+    occurrences_count INT DEFAULT 0,
+    
+    -- Metadatos
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    last_processed_at TIMESTAMP NULL,
+    
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    
+    INDEX idx_recurring_orders_user_id (user_id),
+    INDEX idx_recurring_orders_status (status),
+    INDEX idx_recurring_orders_next_delivery (next_delivery_date),
+    INDEX idx_recurring_orders_active (status, next_delivery_date)
+);
+
+-- Tabla de historial de órdenes recurrentes procesadas
+CREATE TABLE IF NOT EXISTS recurring_order_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    recurring_order_id VARCHAR(36) NOT NULL,
+    order_id INT NOT NULL,
+    processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('success', 'failed') NOT NULL,
+    error_message TEXT NULL,
+    
+    FOREIGN KEY (recurring_order_id) REFERENCES recurring_orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    
+    INDEX idx_recurring_logs_recurring_id (recurring_order_id),
+    INDEX idx_recurring_logs_processed_at (processed_at)
+);
+
+
+-- Agregar campos de Mercado Pago a la tabla orders
+ALTER TABLE orders 
+ADD COLUMN IF NOT EXISTS payment_id VARCHAR(255) NULL,
+ADD COLUMN IF NOT EXISTS mercado_pago_preference_id VARCHAR(255) NULL,
+ADD COLUMN IF NOT EXISTS payment_status ENUM('pending', 'approved', 'rejected', 'in_process', 'cancelled') DEFAULT 'pending',
+ADD COLUMN IF NOT EXISTS payment_method VARCHAR(100) NULL,
+ADD COLUMN IF NOT EXISTS card_last_four VARCHAR(4) NULL,
+ADD COLUMN IF NOT EXISTS installments INT DEFAULT 1;
+
+-- Actualizar el ENUM de payment_method en orders para incluir mercado_pago
+ALTER TABLE orders 
+MODIFY COLUMN payment_method ENUM('transferencia', 'webpay', 'efectivo', 'mercado_pago') NOT NULL;
+
+-- Tabla para logs de pagos (opcional pero recomendado)
+CREATE TABLE IF NOT EXISTS payment_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    payment_id VARCHAR(255),
+    action VARCHAR(100) NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    message TEXT,
+    raw_data JSON,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    INDEX idx_payment_logs_order_id (order_id),
+    INDEX idx_payment_logs_payment_id (payment_id),
+    INDEX idx_payment_logs_created_at (created_at)
+);
+
+-- Índices adicionales para mejorar rendimiento de pagos
+CREATE INDEX IF NOT EXISTS idx_orders_payment_status ON orders(payment_status);
+CREATE INDEX IF NOT EXISTS idx_orders_payment_id ON orders(payment_id);
+CREATE INDEX IF NOT EXISTS idx_orders_mercado_pago_preference ON orders(mercado_pago_preference_id);
+
+-- =============================================================================
+-- CAMPOS PARA BOLETA/FACTURA (Caso de uso N°41)
+-- =============================================================================
+
+-- Agregar campos de documento fiscal a la tabla orders
+ALTER TABLE orders 
+ADD COLUMN IF NOT EXISTS document_type ENUM('boleta', 'factura') DEFAULT 'boleta',
+ADD COLUMN IF NOT EXISTS rut VARCHAR(12) NULL,
+ADD COLUMN IF NOT EXISTS business_name VARCHAR(255) NULL,
+ADD COLUMN IF NOT EXISTS document_generated BOOLEAN DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS document_url VARCHAR(500) NULL;
+
+-- Tabla para logs de generación de documentos
+CREATE TABLE IF NOT EXISTS document_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    document_type ENUM('boleta', 'factura') NOT NULL,
+    document_number VARCHAR(50) NOT NULL,
+    generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    download_url VARCHAR(500) NULL,
+    sent_via_email BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    INDEX idx_document_logs_order_id (order_id),
+    INDEX idx_document_logs_document_number (document_number)
+);
+
 COMMIT;
