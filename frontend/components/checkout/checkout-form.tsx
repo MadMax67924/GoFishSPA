@@ -14,20 +14,20 @@ import { validateRUT } from "@/lib/document-generator"
 
 export default function CheckoutForm() {
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    address: "",
-    city: "",
-    region: "",
-    postalCode: "",
-    paymentMethod: "transferencia",
-    notes: "",
-    documentType: "boleta", // Nuevo campo
-    rut: "", // Nuevo campo
-    businessName: "", // Nuevo campo
-  })
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  address: "",
+  city: "",
+  region: "",
+  postalCode: "",
+  paymentMethod: "transferencia",
+  notes: "",
+  documentType: "boleta", // ← Agregar este campo
+  rut: "", // ← Agregar este campo
+  businessName: "", // ← Agregar este campo
+})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [rutError, setRutError] = useState("")
   const router = useRouter()
@@ -159,7 +159,8 @@ export default function CheckoutForm() {
         subtotal,
         shipping,
         total,
-        status: "pending" // CORRECCIÓN: Siempre pending inicialmente
+        status: shouldRedirectToWhatsapp ? "pending" : 
+        formData.paymentMethod === "webpay" ? "pending" : "confirmed"
       }
 
       console.log("📦 Enviando orden al servidor...")
@@ -199,10 +200,7 @@ export default function CheckoutForm() {
           id: data.orderId, 
           order_number: data.orderNumber,
           items: items,
-          // CORRECCIÓN: Asegurar que los campos tengan los nombres correctos para Stripe
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          postal_code: formData.postalCode
+          
         }
 
         toast({
