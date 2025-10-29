@@ -118,6 +118,28 @@ export async function POST(request: Request) {
       path: "/",
     })
 
+    // 📨 ENVÍO DE CORREO DE CONFIRMACIÓN
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/order/confirm-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          name: `${firstName} ${lastName}`,
+          orderNumber,
+          total,
+          items: cartItems.map((item: any) => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+          })),
+        }),
+      })
+    } catch (emailError) {
+      console.error("Error al enviar correo de confirmación:", emailError)
+      // no interrumpimos el flujo de compra, solo registramos el fallo
+    }
+
     return NextResponse.json({
       success: true,
       orderNumber,
