@@ -14,8 +14,7 @@ async function setupDatabase() {
       password: process.env.DB_PASSWORD || "toki1801",
       database: process.env.DB_NAME || "gofish",
       charset: "utf8mb4",
-      acquireTimeout: 60000,
-      timeout: 60000,
+      connectTimeout: 60000, 
     }
 
     console.log(` Conectando a ${config.host}:${config.port} como ${config.user}`)
