@@ -14,7 +14,18 @@ export async function GET(request: NextRequest) {
     const userId = 1 // TODO: Obtener del JWT/session real
     
     const [rows] = await (await connection).execute(
-      `SELECT w.*, p.name, p.price, p.image 
+      `SELECT 
+        w.id,
+        w.user_id,
+        w.product_id,
+        w.created_at,
+        p.id as id,
+        p.name, 
+        p.price, 
+        p.image,
+        p.description,
+        p.category,
+        p.stock
        FROM user_wishlist w 
        JOIN products p ON w.product_id = p.id 
        WHERE w.user_id = ?`,
