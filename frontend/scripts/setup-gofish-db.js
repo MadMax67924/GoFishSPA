@@ -84,7 +84,7 @@ async function setupDatabase() {
   `)
       console.log(" Tabla usuarios_mfa creada")
     }
-a
+
     // Crear tabla de productos
     if (!existingTables.includes("products")) {
       console.log(" Creando tabla products...")
