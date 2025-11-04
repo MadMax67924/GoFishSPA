@@ -166,27 +166,7 @@ async function setupDatabase() {
       console.log(" Tabla orders creada")
     }
 
-    // VERIFICAR TABLA ORDER_ITEMS
-    if (!existingTables.includes("order_items")) {
-      console.log(" Creando tabla order_items...")
-      await connection.execute(`
-        CREATE TABLE order_items (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          order_id INT NOT NULL,
-          product_id INT NOT NULL,
-          product_name VARCHAR(255) NOT NULL,
-          product_price DECIMAL(10, 2) NOT NULL,
-          quantity INT NOT NULL,
-          subtotal DECIMAL(10, 2) NOT NULL,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-          FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-      `)
-      console.log(" Tabla order_items creada")
-    } else {
-      console.log("✅ Tabla order_items ya existe")
-    }
+    
 
     // VERIFICAR TABLA PRODUCTS
     if (!existingTables.includes("products")) {
@@ -208,6 +188,28 @@ async function setupDatabase() {
       console.log(" Tabla products creada")
     } else {
       console.log("✅ Tabla products ya existe")
+    }
+
+    // VERIFICAR TABLA ORDER_ITEMS
+    if (!existingTables.includes("order_items")) {
+      console.log(" Creando tabla order_items...")
+      await connection.execute(`
+        CREATE TABLE order_items (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          order_id INT NOT NULL,
+          product_id INT NOT NULL,
+          product_name VARCHAR(255) NOT NULL,
+          product_price DECIMAL(10, 2) NOT NULL,
+          quantity INT NOT NULL,
+          subtotal DECIMAL(10, 2) NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+          FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+      console.log(" Tabla order_items creada")
+    } else {
+      console.log("✅ Tabla order_items ya existe")
     }
 
     // VERIFICAR TABLA CARTS
