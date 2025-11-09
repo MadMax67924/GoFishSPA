@@ -240,6 +240,31 @@ async function setupDatabase() {
       console.log(" Tabla faqs creada")
     }
 
+    // Crear tabla de proveedores
+    if (!existingTables.includes("providers")) {
+      console.log(" Creando tabla providers...")
+      await connection.execute(`
+        CREATE TABLE providers (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          company VARCHAR(255) NOT NULL,
+          representative VARCHAR(255) NOT NULL,
+          rut VARCHAR(20) NOT NULL UNIQUE,
+          address TEXT NOT NULL,
+          products TEXT NOT NULL,
+          email VARCHAR(255) NOT NULL,
+          phone VARCHAR(20) NOT NULL,
+          capacity VARCHAR(255) NULL,
+          certifications TEXT NULL,
+          website VARCHAR(255) NULL,
+          notes TEXT NULL,
+          status ENUM('pendiente', 'aprobado', 'rechazado') DEFAULT 'pendiente',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+      console.log(" Tabla providers creada")
+    }
+
     // Crear índices adicionales para mejorar el rendimiento
     console.log(" Creando índices adicionales...")
     try {

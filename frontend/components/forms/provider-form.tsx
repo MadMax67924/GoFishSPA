@@ -17,6 +17,7 @@ export default function ProviderForm() {
     website: "",
     notes: "",
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
@@ -25,27 +26,45 @@ export default function ProviderForm() {
     })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsSubmitting(true)
 
-    const currentProviders = JSON.parse(localStorage.getItem("providers") || "[]")
-    currentProviders.push({ ...formData, status: "pendiente" })
-    localStorage.setItem("providers", JSON.stringify(currentProviders))
+    try {
+      const response = await fetch('/api/providers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
 
-    toast.success("Proveedor registrado en espera de validación ✅")
-    setFormData({
-      company: "",
-      representative: "",
-      rut: "",
-      address: "",
-      products: "",
-      email: "",
-      phone: "",
-      capacity: "",
-      certifications: "",
-      website: "",
-      notes: "",
-    })
+      const data = await response.json()
+
+      if (data.success) {
+        toast.success("Proveedor registrado exitosamente. En espera de validación ✅")
+        setFormData({
+          company: "",
+          representative: "",
+          rut: "",
+          address: "",
+          products: "",
+          email: "",
+          phone: "",
+          capacity: "",
+          certifications: "",
+          website: "",
+          notes: "",
+        })
+      } else {
+        toast.error(data.error || "Error al registrar proveedor")
+      }
+    } catch (error) {
+      console.error('Error:', error)
+      toast.error("Error de conexión. Inténtalo nuevamente.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -188,9 +207,10 @@ export default function ProviderForm() {
 
       <button
         type="submit"
-        className="bg-[#005f73] text-white px-6 py-3 rounded hover:bg-[#003d4d] w-full transition"
+        disabled={isSubmitting}
+        className="bg-[#005f73] text-white px-6 py-3 rounded hover:bg-[#003d4d] w-full transition disabled:opacity-50"
       >
-        Registrar Proveedor
+        {isSubmitting ? "Registrando..." : "Registrar Proveedor"}
       </button>
     </form>
   )
