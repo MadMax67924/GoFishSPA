@@ -222,6 +222,24 @@ async function setupDatabase() {
       console.log(" Tabla sugerencias creada")
     }
 
+    // Crear tabla de FAQs
+    if (!existingTables.includes("faqs")) {
+      console.log(" Creando tabla faqs...")
+      await connection.execute(`
+        CREATE TABLE faqs (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          question VARCHAR(500) NOT NULL,
+          answer TEXT NOT NULL,
+          category VARCHAR(100) DEFAULT 'general',
+          display_order INT DEFAULT 0,
+          is_active BOOLEAN DEFAULT TRUE,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+      console.log(" Tabla faqs creada")
+    }
+
     // Crear índices adicionales para mejorar el rendimiento
     console.log(" Creando índices adicionales...")
     try {
@@ -234,6 +252,9 @@ async function setupDatabase() {
       await connection.execute("CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id)")
       await connection.execute("CREATE INDEX IF NOT EXISTS idx_sugerencias_fecha ON sugerencias(fecha)")
       await connection.execute("CREATE INDEX IF NOT EXISTS idx_stripe_payment_intent_id ON orders(stripe_payment_intent_id)")
+      await connection.execute("CREATE INDEX IF NOT EXISTS idx_faqs_category ON faqs(category)")
+      await connection.execute("CREATE INDEX IF NOT EXISTS idx_faqs_display_order ON faqs(display_order)")
+      await connection.execute("CREATE INDEX IF NOT EXISTS idx_faqs_active ON faqs(is_active)")
       console.log(" Índices creados correctamente")
     } catch (error) {
       console.log(" Los índices ya existen o hubo un error al crearlos:", error.message)
@@ -353,16 +374,81 @@ async function setupDatabase() {
       console.log(" Ya existe un usuario administrador")
     }
 
+    // Verificar si ya hay FAQs e insertar datos iniciales
+    const [faqCount] = await connection.execute("SELECT COUNT(*) as count FROM faqs")
+
+    if (faqCount[0].count === 0) {
+      console.log(" Insertando FAQs iniciales...")
+
+      const faqs = [
+        [
+          "¿Cuál es el tiempo de entrega?",
+          "Entregamos en 24-48 horas en la V Región. Para otras regiones, consulta tiempos específicos. Nuestro equipo se encarga de mantener la cadena de frío durante todo el proceso.",
+          "general",
+          1,
+          true
+        ],
+        [
+          "¿Cómo garantizan la frescura?",
+          "Mantenemos la cadena de frío desde la captura hasta la entrega con transporte refrigerado especializado. Todos nuestros productos son procesados el mismo día de su captura.",
+          "general",
+          2,
+          true
+        ],
+        [
+          "¿Cuál es el pedido mínimo?",
+          "No tenemos pedido mínimo. Puedes comprar desde 1 kg de cualquier producto. Sin embargo, para pedidos superiores a $50.000 el envío es gratuito en la V Región.",
+          "general",
+          3,
+          true
+        ],
+        [
+          "¿Aceptan devoluciones?",
+          "Sí, aceptamos devoluciones dentro de las primeras 2 horas de entrega si el producto no cumple con nuestros estándares de calidad. Tu satisfacción es nuestra prioridad.",
+          "general",
+          4,
+          true
+        ],
+        [
+          "¿Qué métodos de pago aceptan?",
+          "Aceptamos transferencias bancarias, WebPay (tarjetas de crédito/débito) y pago en efectivo contra entrega. Todos los métodos son seguros y confiables.",
+          "general",
+          5,
+          true
+        ],
+        [
+          "¿Hacen envíos a regiones?",
+          "Sí, realizamos envíos a todo Chile. Los costos y tiempos varían según la región. Contacta con nosotros para obtener información específica de tu zona.",
+          "general",
+          6,
+          true
+        ]
+      ]
+
+      for (const faq of faqs) {
+        await connection.execute(
+          "INSERT INTO faqs (question, answer, category, display_order, is_active) VALUES (?, ?, ?, ?, ?)",
+          faq
+        )
+      }
+
+      console.log(" FAQs iniciales insertadas correctamente")
+    } else {
+      console.log(` Ya existen ${faqCount[0].count} FAQs en la base de datos`)
+    }
+
     // Resumen final
     console.log("\n ¡Base de datos configurada correctamente!")
     console.log(" Resumen:")
 
     const [finalProductCount] = await connection.execute("SELECT COUNT(*) as count FROM products")
     const [finalUserCount] = await connection.execute("SELECT COUNT(*) as count FROM users")
+    const [finalFaqCount] = await connection.execute("SELECT COUNT(*) as count FROM faqs")
     const [finalTables] = await connection.execute("SHOW TABLES")
 
     console.log(`   - Productos: ${finalProductCount[0].count}`)
     console.log(`   - Usuarios: ${finalUserCount[0].count}`)
+    console.log(`   - FAQs: ${finalFaqCount[0].count}`)
     console.log(`   - Tablas: ${finalTables.length}`)
     console.log("   - Base de datos: gofish")
     console.log("   - Host: 127.0.0.1:3306")
