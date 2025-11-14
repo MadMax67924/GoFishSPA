@@ -9,6 +9,6 @@
     "db:setup": "npm --prefix frontend run setup-db"
   },
   "dependencies": {
-  
+    "mysql2": "^3.15.3"
   }
 }

@@ -238,6 +238,32 @@ async function setupDatabase() {
       console.log(" Tabla sugerencias creada")
     }
 
+    // Crear tabla de logs de despliegue
+    if (!existingTables.includes("deployment_logs")) {
+      console.log(" Creando tabla deployment_logs...")
+      await connection.execute(`
+        CREATE TABLE deployment_logs (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          deployment_id VARCHAR(100) NOT NULL,
+          environment VARCHAR(50) NOT NULL DEFAULT 'production',
+          status ENUM('started', 'success', 'failed', 'rollback') NOT NULL,
+          timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+          error_message TEXT NULL,
+          user_activity_during_deploy INT DEFAULT 0,
+          database_health_check BOOLEAN DEFAULT FALSE,
+          api_tests_passed BOOLEAN DEFAULT FALSE,
+          deployment_duration_seconds INT NULL,
+          rollback_reason TEXT NULL,
+          
+          INDEX idx_deployment_id (deployment_id),
+          INDEX idx_status (status),
+          INDEX idx_timestamp (timestamp),
+          INDEX idx_environment (environment)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+      console.log(" Tabla deployment_logs creada")
+    }
+
     // Crear índices adicionales para mejorar el rendimiento
     console.log(" Creando índices adicionales...")
     try {
@@ -249,6 +275,8 @@ async function setupDatabase() {
       await connection.execute("CREATE INDEX IF NOT EXISTS idx_cart_items_cart_id ON cart_items(cart_id)")
       await connection.execute("CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id)")
       await connection.execute("CREATE INDEX IF NOT EXISTS idx_sugerencias_fecha ON sugerencias(fecha)")
+      await connection.execute("CREATE INDEX IF NOT EXISTS idx_deployment_logs_status ON deployment_logs(status)")
+      await connection.execute("CREATE INDEX IF NOT EXISTS idx_deployment_logs_timestamp ON deployment_logs(timestamp)")
       console.log(" Índices creados correctamente")
     } catch (error) {
       console.log(" Los índices ya existen o hubo un error al crearlos:", error.message)
