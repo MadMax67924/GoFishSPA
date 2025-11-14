@@ -10,6 +10,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
+import RecurringOrderSection from "@/components/checkout/recurring-order-section"
+import type { RecurringOrderConfig } from "@/types/recurring-orders"
+import { validateRecurringConfig } from "@/lib/recurring-orders"
 
 export default function CheckoutForm() {
   const [formData, setFormData] = useState({
@@ -21,10 +24,17 @@ export default function CheckoutForm() {
     city: "",
     region: "",
     postalCode: "",
-    paymentMethod: "transferencia",
+    paymentMethod: "transferencia", // Valor por defecto
     notes: "",
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [recurringConfig, setRecurringConfig] = useState<RecurringOrderConfig>({
+    isRecurring: false,
+    intervalMonths: 1,
+    totalDurationMonths: 6,
+    startDate: new Date().toISOString().split('T')[0],
+    totalCycles: 0
+  })
   const router = useRouter()
   const { toast } = useToast()
 
@@ -68,12 +78,39 @@ export default function CheckoutForm() {
     fetchUserInfo()
   }, [])
 
+  // NUEVO: Efecto para cambiar automáticamente a WebPay cuando se activa recurrencia
+  useEffect(() => {
+    if (recurringConfig.isRecurring && formData.paymentMethod !== "webpay") {
+      console.log("🔄 Cambiando automáticamente a WebPay por compra recurrente")
+      setFormData(prev => ({
+        ...prev,
+        paymentMethod: "webpay"
+      }))
+      
+      toast({
+        title: "Método de pago actualizado",
+        description: "Se cambió automáticamente a WebPay para compras recurrentes",
+        duration: 3000,
+      })
+    }
+  }, [recurringConfig.isRecurring, formData.paymentMethod, toast])
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
   const handleRadioChange = (value: string) => {
+    // NUEVO: Prevenir cambiar a otros métodos si es recurrente
+    if (recurringConfig.isRecurring && value !== "webpay") {
+      toast({
+        title: "Método no disponible",
+        description: "Las compras recurrentes solo están disponibles con WebPay",
+        variant: "destructive",
+        duration: 3000,
+      })
+      return
+    }
     setFormData((prev) => ({ ...prev, paymentMethod: value }))
   }
 
@@ -84,6 +121,31 @@ export default function CheckoutForm() {
     console.log("🟡 Iniciando proceso de checkout...")
 
     try {
+      // VALIDAR CONFIGURACIÓN RECURRENTE
+      if (recurringConfig.isRecurring) {
+        const validationError = validateRecurringConfig(recurringConfig)
+        if (validationError) {
+          toast({
+            title: "Error en configuración recurrente",
+            description: validationError,
+            variant: "destructive",
+          })
+          setIsSubmitting(false)
+          return
+        }
+
+        // FORZAR WebPay para compras recurrentes (doble validación)
+        if (formData.paymentMethod !== "webpay") {
+          toast({
+            title: "Método de pago requerido",
+            description: "Las compras recurrentes solo están disponibles con WebPay",
+            variant: "destructive",
+          })
+          setIsSubmitting(false)
+          return
+        }
+      }
+
       console.log("🔄 Obteniendo carrito...")
       const res = await fetch("/api/cart")
       if (!res.ok) throw new Error("Error al cargar el resumen del carrito")
@@ -107,6 +169,8 @@ export default function CheckoutForm() {
         subtotal,
         shipping,
         total,
+        isRecurring: recurringConfig.isRecurring,
+        recurringConfig: recurringConfig.isRecurring ? recurringConfig : null,
         status: shouldRedirectToWhatsapp ? "pending" : 
                 formData.paymentMethod === "webpay" ? "pending" : "confirmed"
       }
@@ -162,7 +226,9 @@ export default function CheckoutForm() {
             name: item.name,
             quantity: item.quantity,
             price: item.price
-          }))
+          })),
+          is_recurring: recurringConfig.isRecurring,
+          recurring_config: recurringConfig.isRecurring ? recurringConfig : null
         }
 
         console.log("📦 Datos enviados a payment-intent:", completeOrderData)
@@ -177,7 +243,14 @@ export default function CheckoutForm() {
         console.log("🔄 Llamando a /api/payment-intent...")
         
         try {
-          const paymentIntentRes = await fetch("/api/payment-intent", {
+          // NUEVO: Usar endpoint específico para recurrentes si corresponde
+          const paymentEndpoint = recurringConfig.isRecurring 
+            ? "/api/payment-intent-recurring-orders" 
+            : "/api/payment-intent"
+
+          console.log(`📍 Usando endpoint: ${paymentEndpoint}`)
+          
+          const paymentIntentRes = await fetch(paymentEndpoint, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -237,6 +310,11 @@ export default function CheckoutForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
+      {/* SECCIÓN NUEVA DE COMPRAS RECURRENTES */}
+      <RecurringOrderSection 
+        onConfigChange={setRecurringConfig}
+      />
+
       <Card>
         <CardHeader>
           <CardTitle>Información de contacto</CardTitle>
@@ -357,20 +435,60 @@ export default function CheckoutForm() {
           <CardTitle>Método de pago</CardTitle>
         </CardHeader>
         <CardContent>
-          <RadioGroup value={formData.paymentMethod} onValueChange={handleRadioChange} className="space-y-3">
+          <RadioGroup 
+            value={formData.paymentMethod} 
+            onValueChange={handleRadioChange} 
+            className="space-y-3"
+          >
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="transferencia" id="transferencia" />
-              <Label htmlFor="transferencia">Transferencia bancaria</Label>
+              <RadioGroupItem 
+                value="transferencia" 
+                id="transferencia" 
+                disabled={recurringConfig.isRecurring}
+              />
+              <Label htmlFor="transferencia" className={recurringConfig.isRecurring ? "text-gray-400" : ""}>
+                Transferencia bancaria
+                {recurringConfig.isRecurring && " (No disponible para compras recurrentes)"}
+              </Label>
             </div>
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="webpay" id="webpay" />
-              <Label htmlFor="webpay">WebPay (tarjeta de crédito/débito)</Label>
+              <RadioGroupItem 
+                value="webpay" 
+                id="webpay" 
+                checked={formData.paymentMethod === "webpay"}
+              />
+              <Label htmlFor="webpay" className={recurringConfig.isRecurring ? "text-green-600 font-semibold" : ""}>
+                WebPay (tarjeta de crédito/débito)
+                {recurringConfig.isRecurring && " ✅ Requerido para compras recurrentes"}
+              </Label>
             </div>
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="efectivo" id="efectivo" />
-              <Label htmlFor="efectivo">Efectivo contra entrega</Label>
+              <RadioGroupItem 
+                value="efectivo" 
+                id="efectivo" 
+                disabled={recurringConfig.isRecurring}
+              />
+              <Label htmlFor="efectivo" className={recurringConfig.isRecurring ? "text-gray-400" : ""}>
+                Efectivo contra entrega
+                {recurringConfig.isRecurring && " (No disponible para compras recurrentes)"}
+              </Label>
             </div>
           </RadioGroup>
+
+          {/* MENSAJE INFORMATIVO CUANDO ES RECURRENTE */}
+          {recurringConfig.isRecurring && (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-700">
+                💡 Para compras recurrentes solo está disponible WebPay. 
+                El pago se procesará automáticamente en cada ciclo según la configuración establecida.
+              </p>
+              {formData.paymentMethod === "webpay" && (
+                <p className="text-sm text-green-700 mt-2">
+                  ✅ Método de pago configurado correctamente para compra recurrente.
+                </p>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 

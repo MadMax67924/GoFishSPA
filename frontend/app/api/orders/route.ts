@@ -19,7 +19,9 @@ export async function POST(request: Request) {
       postalCode,
       paymentMethod,
       notes,
-      cartItems
+      cartItems,
+      isRecurring,
+      recurringConfig
     } = orderData
 
     if (!firstName || !lastName || !email || !phone || !address || !city || !region || !paymentMethod) {
@@ -66,11 +68,12 @@ export async function POST(request: Request) {
 
     const orderNumber = `GF-${Date.now()}-${Math.floor(Math.random() * 1000)}`
 
+    // MODIFICADO: Incluir is_recurring en el INSERT
     const orderSql = `
       INSERT INTO orders (
         order_number, user_id, first_name, last_name, email, phone, address, city, region, 
-        postal_code, payment_method, notes, subtotal, shipping, total, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        postal_code, payment_method, notes, subtotal, shipping, total, status, is_recurring
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
 
     const orderResult = await executeQuery(orderSql, [
@@ -90,9 +93,34 @@ export async function POST(request: Request) {
       shipping,
       total,
       status,
+      isRecurring || false // ← NUEVO CAMPO
     ])
 
     const orderId = (orderResult as any).insertId
+
+    // NUEVO: Crear orden recurrente si está configurado
+    if (isRecurring && recurringConfig) {
+      try {
+        console.log("🔄 Creando orden recurrente...")
+        const recurringResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/recurring-orders`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            parentOrderId: orderId,
+            recurringConfig
+          })
+        })
+
+        if (!recurringResponse.ok) {
+          console.error("❌ Error creando orden recurrente")
+        } else {
+          console.log("✅ Orden recurrente creada exitosamente")
+        }
+      } catch (recurringError) {
+        console.error("❌ Error en creación de orden recurrente:", recurringError)
+        // No bloquear la orden principal por error en recurrente
+      }
+    }
 
     for (const item of cartItems as any[]) {
       const orderItemSql = `
@@ -134,6 +162,8 @@ export async function POST(request: Request) {
               quantity: item.quantity,
               price: item.price,
             })),
+            isRecurring: isRecurring || false,
+            recurringConfig: isRecurring ? recurringConfig : null
           }),
         })
 
