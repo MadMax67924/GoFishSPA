@@ -109,10 +109,11 @@ async function setupDatabase() {
     // VERIFICAR Y AGREGAR COLUMNAS FALTANTES EN ORDERS
     console.log("🔍 Verificando columnas faltantes en tabla orders...")
     
-    if (existingTables.includes("orders")) {
+     if (existingTables.includes("orders")) {
       const columnsToAdd = [
         { name: 'stripe_payment_intent_id', type: 'VARCHAR(255) NULL' },
-        { name: 'invoice_pdf_path', type: 'VARCHAR(500) NULL' }
+        { name: 'invoice_pdf_path', type: 'VARCHAR(500) NULL' },
+        { name: 'is_recurring', type: 'BOOLEAN DEFAULT FALSE' } // ← NUEVA COLUMNA PARA COMPRAS RECURRENTES
       ]
 
       for (const column of columnsToAdd) {
@@ -158,12 +159,40 @@ async function setupDatabase() {
           status ENUM('pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled') DEFAULT 'pending',
           stripe_payment_intent_id VARCHAR(255) NULL,
           invoice_pdf_path VARCHAR(500) NULL,
+          is_recurring BOOLEAN DEFAULT FALSE, -- ← NUEVA COLUMNA PARA COMPRAS RECURRENTES
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
           FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `)
       console.log(" Tabla orders creada")
+    }
+
+    // VERIFICAR TABLA RECURRING_ORDERS (NUEVA TABLA PARA COMPRAS RECURRENTES)
+    if (!existingTables.includes("recurring_orders")) {
+      console.log("🔄 Creando tabla recurring_orders...")
+      await connection.execute(`
+        CREATE TABLE recurring_orders (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          parent_order_id INT NOT NULL,
+          interval_months INT NOT NULL,
+          total_duration_months INT NOT NULL,
+          start_date DATE NOT NULL,
+          total_cycles INT NOT NULL,
+          cycles_completed INT DEFAULT 0,
+          next_order_date DATE NOT NULL,
+          status ENUM('active', 'paused', 'cancelled', 'completed') DEFAULT 'active',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          FOREIGN KEY (parent_order_id) REFERENCES orders(id) ON DELETE CASCADE,
+          INDEX idx_status (status),
+          INDEX idx_next_order_date (next_order_date),
+          INDEX idx_parent_order (parent_order_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+      console.log("✅ Tabla recurring_orders creada")
+    } else {
+      console.log("✅ Tabla recurring_orders ya existe")
     }
 
     
@@ -212,23 +241,6 @@ async function setupDatabase() {
       console.log("✅ Tabla order_items ya existe")
     }
 
-    // VERIFICAR TABLA CARTS
-    if (!existingTables.includes("carts")) {
-      console.log(" Creando tabla carts...")
-      await connection.execute(`
-        CREATE TABLE carts (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          cart_id VARCHAR(255) UNIQUE NOT NULL,
-          user_id INT NULL,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-      `)
-      console.log(" Tabla carts creada")
-    } else {
-      console.log("✅ Tabla carts ya existe")
-    }
 
     // VERIFICAR TABLA CART_ITEMS
     if (!existingTables.includes("cart_items")) {
@@ -236,12 +248,12 @@ async function setupDatabase() {
       await connection.execute(`
         CREATE TABLE cart_items (
           id INT AUTO_INCREMENT PRIMARY KEY,
-          cart_id INT NOT NULL,
+          cart_id VARCHAR(255) NOT NULL,
           product_id INT NOT NULL,
           quantity INT NOT NULL DEFAULT 1,
+          is_preorder BOOLEAN DEFAULT FALSE,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          FOREIGN KEY (cart_id) REFERENCES carts(id) ON DELETE CASCADE,
           FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
           UNIQUE KEY unique_cart_product (cart_id, product_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
@@ -298,9 +310,98 @@ async function setupDatabase() {
       console.log(" Los índices ya existen o hubo un error al crearlos:", error.message)
     }
 
-    // Verificar si ya hay productos
     const [productCount] = await connection.execute("SELECT COUNT(*) as count FROM products")
-    console.log(`📊 Productos existentes: ${productCount[0].count}`)
+
+    // Verificar si ya hay productos
+    if (productCount[0].count === 0) {
+      console.log(" Insertando productos de ejemplo...")
+
+      const products = [
+        [
+          "Salmón Fresco",
+          "Salmón fresco del día, ideal para preparaciones crudas como sushi o ceviches. Producto de primera calidad capturado de forma sostenible.",
+          8990.00,
+          "/images/salmon.jpg",
+          "pescados",
+          0,
+          true,
+        ],
+        [
+          "Merluza Austral",
+          "Merluza austral de aguas profundas, perfecta para frituras y guisos. Pescado blanco de sabor suave y textura firme.",
+          5990.00,
+          "/images/merluza.jpg",
+          "pescados",
+          40,
+          true,
+        ],
+        [
+          "Reineta",
+          "Reineta fresca, pescado blanco de sabor suave ideal para hornear.",
+          6490.00,
+          "/images/reineta.jpg",
+          "pescados",
+          35,
+          true,
+        ],
+        [
+          "Camarones",
+          "Camarones ecuatorianos de cultivo, perfectos para cócteles y paellas.",
+          12990.00,
+          "/images/camarones.jpg",
+          "mariscos",
+          30,
+          true,
+        ],
+        [
+          "Congrio",
+          "Congrio dorado, ideal para caldillo y frituras.",
+          9990.00,
+          "/images/congrio.jpg",
+          "pescados",
+          25,
+          false,
+        ],
+        [
+          "Choritos",
+          "Choritos frescos de la zona, perfectos para preparar a la marinera.",
+          4990.00,
+          "/images/choritos.jpg",
+          "mariscos",
+          60,
+          false,
+        ],
+        [
+          "Pulpo",
+          "Pulpo fresco, ideal para ensaladas y preparaciones a la parrilla.",
+          15990.00,
+          "/images/pulpo.jpg",
+          "mariscos",
+          15,
+          false,
+        ],
+        [
+          "Atún",
+          "Atún fresco, perfecto para tataki y preparaciones a la plancha.",
+          11990.00,
+          "/images/atun.jpg",
+          "pescados",
+          20,
+          false,
+        ],
+      ]
+
+      for (const product of products) {
+        await connection.execute(
+          "INSERT INTO products (name, description, price, image, category, stock, featured) VALUES (?, ?, ?, ?, ?, ?, ?)",
+          product,
+        )
+      }
+
+      console.log(" Productos insertados correctamente")
+    } else {
+      console.log(` Ya existen ${productCount[0].count} productos en la base de datos`)
+    }
 
     // Verificar si ya hay usuarios admin
     const [adminCount] = await connection.execute('SELECT COUNT(*) as count FROM users WHERE role = "admin"')
