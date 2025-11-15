@@ -58,13 +58,17 @@ export async function POST(request: Request) {
     console.log(orderData.region)
 
     let status: string;
-    if (paymentMethod === "webpay") {
-      status = "pending";
+    if (paymentMethod === "transferencia") {
+      status = "pending"; // Transferencias quedan pendientes de confirmación
+    } else if (paymentMethod === "webpay") {
+      status = "pending"; // WebPay también queda pendiente hasta pago
     } else if (total < 30000 && region !== "Valparaíso") {
-      status = "cancelled";
+      status = "cancelled"; // Pedidos pequeños fuera de Valparaíso se cancelan
     } else {
-      status = "confirmed";
+      status = "confirmed"; // Efectivo y otros métodos se confirman automáticamente
     }
+
+console.log(`📊 Método pago: ${paymentMethod}, Status: ${status}`);
 
     const orderNumber = `GF-${Date.now()}-${Math.floor(Math.random() * 1000)}`
 

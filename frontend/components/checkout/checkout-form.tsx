@@ -160,6 +160,48 @@ export default function CheckoutForm() {
 
       console.log("💰 Totales - Subtotal:", subtotal, "Envío:", shipping, "Total:", total)
 
+          // NUEVO: Redirección inmediata para transferencia bancaria
+    if (formData.paymentMethod === "transferencia") {
+      console.log("🏦 Procesando transferencia bancaria...")
+      
+      // Crear la orden primero con status "pending"
+      const orderData = {
+        ...formData,
+        cartItems: items,
+        subtotal,
+        shipping,
+        total,
+        isRecurring: recurringConfig.isRecurring,
+        recurringConfig: recurringConfig.isRecurring ? recurringConfig : null,
+        status: "pending" // ← Status específico para transferencias
+      }
+
+      console.log("🔄 Creando orden para transferencia...")
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(orderData),
+      })
+
+      const data = await response.json()
+      console.log("📊 Respuesta de /api/orders para transferencia:", data)
+
+      if (!response.ok) {
+        throw new Error(data.error || "Error al crear la orden para transferencia")
+      }
+
+      toast({
+        title: "Orden creada exitosamente",
+        description: "Serás redirigido a los datos bancarios para completar la transferencia.",
+      })
+
+      // Redirigir a la página de transferencia bancaria
+      router.push(`/transferencia-bancaria?order=${data.orderNumber}`)
+      return // ← IMPORTANTE: Salir de la función aquí
+    }
+
       const shouldRedirectToWhatsapp = total < 20000 && formData.region !== "Valparaíso"
       console.log("📱 Redirigir a WhatsApp?", shouldRedirectToWhatsapp)
 
@@ -451,6 +493,14 @@ export default function CheckoutForm() {
                 {recurringConfig.isRecurring && " (No disponible para compras recurrentes)"}
               </Label>
             </div>
+            {formData.paymentMethod === "transferencia" && !recurringConfig.isRecurring && (
+              <div className="ml-6 mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-700">
+                   Serás redirigido a una página con los datos bancarios después de confirmar tu pedido.
+                  Tu orden quedará en estado "pendiente" hasta que confirmemos la transferencia.
+                </p>
+              </div>
+            )}
             <div className="flex items-center space-x-2">
               <RadioGroupItem 
                 value="webpay" 
