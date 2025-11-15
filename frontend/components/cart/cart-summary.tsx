@@ -27,10 +27,6 @@ export default function CartSummary() {
     try {
       const response = await fetch("/api/cart", {
         cache: "no-store",
-        headers: {
-          "Cache-Control": "no-cache",
-          Pragma: "no-cache",
-        },
       })
 
       if (!response.ok) throw new Error("Error al cargar el resumen del carrito")
@@ -40,21 +36,11 @@ export default function CartSummary() {
       // Calcular el resumen con validación estricta
       const items = data.items || []
 
-      // Validar que los items sean válidos
-      const validItems = items.filter(
-        (item: any) =>
-          item &&
-          typeof item.quantity === "number" &&
-          typeof item.price === "number" &&
-          item.quantity > 0 &&
-          item.price > 0,
-      )
-
-      const itemCount = validItems.reduce((acc: number, item: any) => {
+      const itemCount = items.reduce((acc: number, item: any) => {
         return acc + item.quantity
       }, 0)
 
-      const subtotal = validItems.reduce((acc: number, item: any) => {
+      const subtotal = items.reduce((acc: number, item: any) => {
         return acc + item.price * item.quantity
       }, 0)
 

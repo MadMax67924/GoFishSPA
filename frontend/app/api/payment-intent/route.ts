@@ -78,7 +78,6 @@ export async function POST(request: Request) {
         WHERE id = ?
       `
       await executeQuery(updateSql, [session.id, orderData.id])
-      console.log(`✅ Checkout Session ${session.id} guardada para orden ${orderData.id}`)
     } catch (dbError) {
       console.error("Error guardando session en BD:", dbError)
     }
