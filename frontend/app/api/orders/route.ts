@@ -54,8 +54,6 @@ export async function POST(request: Request) {
     const subtotal = cartItems.reduce((acc: number, item: any) => acc + item.price * item.quantity, 0)
     const shipping = subtotal > 30000 ? 0 : 5000
     const total = subtotal + shipping
-    console.log(total)
-    console.log(orderData.region)
 
     let status: string;
     if (paymentMethod === "webpay") {
@@ -148,7 +146,6 @@ export async function POST(request: Request) {
     // 📨 ENVÍO DE CORREO DE CONFIRMACIÓN (ASÍNCRONO Y NO BLOQUEANTE)
     setTimeout(async () => {
       try {
-        console.log("📦 Enviando correo de confirmación de pedido...")
         const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/orders/confirm-email`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -168,7 +165,6 @@ export async function POST(request: Request) {
         })
 
         const result = await response.json()
-        console.log("✅ Respuesta del correo:", result)
       } catch (emailError) {
         console.error("❌ Error al enviar correo de confirmación:", emailError)
       }

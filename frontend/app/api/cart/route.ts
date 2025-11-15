@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server"
-import { getProductById } from "@/lib/server/products-data"
+import { executeQuery } from '@/lib/mysql';
 
 // Simulación de carrito en memoria para el servidor - COMPARTIDA
-export const serverCarts = new Map<string, any[]>()
 
 function getCartId(request: Request): string {
   const cookieHeader = request.headers.get("cookie") || ""
@@ -13,29 +12,25 @@ function getCartId(request: Request): string {
 export async function GET(request: Request) {
   try {
     const cartId = getCartId(request)
-    const cartItems = serverCarts.get(cartId) || []
 
     // Enriquecer items con información del producto actualizada
-    const enrichedItems = cartItems
-      .map((item) => {
-        const product = getProductById(item.productId)
-        if (!product) {
-          console.warn(`Producto ${item.productId} no encontrado`)
-          return null
-        }
-        return {
-          id: item.id,
-          product_id: item.productId,
-          quantity: item.quantity,
-          name: product.name,
-          price: product.price,
-          image: product.image,
-          isPreOrder: item.isPreOrder || false // ← NUEVO: Incluir flag de pre-orden
-        }
-      })
-      .filter(Boolean) // Remover items null
+    const query = `
+      SELECT 
+        ci.id,
+        ci.quantity,
+        ci.product_id,
+        ci.is_preorder,
+        p.name,
+        p.price,
+        p.image
+      FROM cart_items ci
+      INNER JOIN products p ON ci.product_id = p.id
+      WHERE ci.cart_id = ?
+    `;
+    
+    const cartItems = await executeQuery(query, [cartId]);
 
-    return NextResponse.json({ items: enrichedItems })
+    return NextResponse.json({ items: cartItems })
   } catch (error) {
     console.error("Error al obtener carrito:", error)
     return NextResponse.json({ error: "Error al obtener carrito" }, { status: 500 })
@@ -47,42 +42,51 @@ export async function POST(request: Request) {
     const { productId, quantity, isPreOrder } = await request.json() // ← NUEVO: Recibir isPreOrder
     const cartId = getCartId(request)
 
-    const cartItems = serverCarts.get(cartId) || []
+    const query = `
+      SELECT 
+        ci.id,
+        ci.quantity,
+        ci.product_id,
+        ci.is_preorder,
+        p.name,
+        p.price,
+        p.image
+      FROM cart_items ci
+      INNER JOIN products p ON ci.product_id = p.id
+      WHERE ci.cart_id = ? AND ci.product_id = ?
+    `;
+    
+    const cartItem = await executeQuery(query, [cartId, productId]) as {
+      id: number;
+      quantity: number;
+      product_id: number;
+      is_preorder: boolean;
+      name: string;
+      price: number;
+      image: string;
+    }[];
 
-    // Verificar si el producto existe
-    const product = getProductById(productId)
-    if (!product) {
-      return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 })
-    }
-
-    // Buscar si el producto ya está en el carrito
-    const existingItemIndex = cartItems.findIndex((item) => 
-      item.productId === productId && item.isPreOrder === (isPreOrder || false)
-    )
-
-    if (existingItemIndex >= 0) {
-      // Actualizar cantidad del mismo tipo (normal o pre-orden)
-      cartItems[existingItemIndex].quantity += quantity
-    } else {
-      // Añadir nuevo item
-      const newItem = {
-        id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        productId,
-        quantity,
-        isPreOrder: isPreOrder || false, // ← NUEVO: Guardar flag de pre-orden
-        addedAt: new Date().toISOString(),
+    if (cartItem && cartItem.length > 0) {
+      const cantidad = cartItem[0].quantity + 1;
+      const add = await executeQuery(`
+      UPDATE cart_items SET quantity = ? WHERE cart_id = ? 
+      `, [cantidad, cartId])
+      if(!add){
+        console.error("Error al actualizar carrito")
       }
-      cartItems.push(newItem)
+    } else {
+      const put = await executeQuery(`
+      INSERT INTO cart_items (cart_id, product_id, quantity) 
+      VALUES (?, ?, ?)
+      `, [cartId, productId, quantity])
+      if(!put){
+        console.error("Error al actualizar carrito")
+      }
     }
 
-    serverCarts.set(cartId, cartItems)
 
     // Pequeño delay para asegurar consistencia
     await new Promise((resolve) => setTimeout(resolve, 50))
-
-    // Log para debug
-    console.log(`Carrito ${cartId} actualizado:`, cartItems.length, "items")
-    console.log("Pre-orden agregada:", isPreOrder)
 
     const response = NextResponse.json({ success: true })
     response.cookies.set("cartId", cartId, {
@@ -105,20 +109,21 @@ export async function PUT(request: Request) {
     const { itemId, quantity } = await request.json()
     const cartId = getCartId(request)
 
-    let cartItems = serverCarts.get(cartId) || []
-
     if (quantity <= 0) {
-      // Eliminar item
-      cartItems = cartItems.filter((item) => item.id !== itemId)
+      const delSQL = await executeQuery(`
+            DELETE FROM cart_items
+            WHERE cart_id = ? AND id = ?
+            `, [cartId, itemId])
+      if (!delSQL) throw new Error("Error eliminando item")
     } else {
-      // Actualizar cantidad
-      const itemIndex = cartItems.findIndex((item) => item.id === itemId)
-      if (itemIndex >= 0) {
-        cartItems[itemIndex].quantity = quantity
-      }
+      console.log(itemId)
+      const apSQL = await executeQuery(`
+            UPDATE cart_items
+            SET quantity = ?
+            WHERE cart_id = ? AND id = ?
+            `, [quantity, cartId, itemId])
+      if (!apSQL) throw new Error("Error actualizando cantidad")
     }
-
-    serverCarts.set(cartId, cartItems)
 
     // Pequeño delay para asegurar consistencia
     await new Promise((resolve) => setTimeout(resolve, 50))
@@ -141,27 +146,41 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "ID del item requerido" }, { status: 400 })
     }
 
-    let cartItems = serverCarts.get(cartId) || []
-    const originalLength = cartItems.length
+    const query = `
+      SELECT 
+        ci.id,
+        ci.quantity,
+        ci.product_id,
+        ci.is_preorder,
+        p.name,
+        p.price,
+        p.image
+      FROM cart_items ci
+      INNER JOIN products p ON ci.product_id = p.id
+      WHERE ci.cart_id = ?
+    `;
+    
+    const cartItems = await executeQuery(query, [cartId]);
 
-    cartItems = cartItems.filter((item) => item.id !== itemId)
-
-    // Si se eliminó un item, actualizar el carrito
-    if (cartItems.length < originalLength) {
-      if (cartItems.length === 0) {
-        // Si no quedan items, eliminar completamente el carrito
-        serverCarts.delete(cartId)
-        console.log(`Carrito ${cartId} completamente eliminado - sin items restantes`)
-      } else {
-        serverCarts.set(cartId, cartItems)
-        console.log(`Item ${itemId} eliminado del carrito ${cartId}. Items restantes: ${cartItems.length}`)
-      }
+    const delSQL = await executeQuery(`
+            DELETE FROM cart_items
+            WHERE cart_id = ? AND id = ?
+            `, [cartId, itemId])
+    if (!delSQL) throw new Error("Error eliminando item")
+  
+    if (!cartItems) {
+      const response = NextResponse.json({
+            success: true,
+            message: "Carrito completamente eliminado",
+          })
+      
+      response.cookies.delete("cartId")
+      return response
     }
+  
 
     return NextResponse.json({
       success: true,
-      itemsRemaining: cartItems.length,
-      cartDeleted: cartItems.length === 0,
     })
   } catch (error) {
     console.error("Error al eliminar item del carrito:", error)

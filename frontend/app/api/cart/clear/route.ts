@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
+import { executeQuery } from '@/lib/mysql';
 
 // Acceso a la misma instancia de memoria que usa el carrito principal
-const serverCarts = new Map<string, any[]>()
 
 function getCartId(request: Request): string {
   const cookieHeader = request.headers.get("cookie") || ""
@@ -18,17 +18,15 @@ export async function DELETE(request: Request) {
     }
 
     // Eliminar completamente el carrito de la memoria
-    serverCarts.delete(cartId)
-
-    // Log para debug
-    console.log(`Carrito ${cartId} completamente eliminado de memoria`)
-    console.log(`Carritos restantes en memoria: ${serverCarts.size}`)
-
+    const delSQL = await executeQuery(`
+            DELETE FROM cart_items
+            WHERE cart_id = ?
+            `, [cartId])
+    if (!delSQL) throw new Error("Error eliminando item")
     // Crear respuesta y eliminar la cookie
     const response = NextResponse.json({
       success: true,
       message: "Carrito completamente eliminado",
-      remainingCarts: serverCarts.size,
     })
 
     // Eliminar la cookie del carrito

@@ -20,27 +20,42 @@ interface OrderDetails {
 export default function OrderConfirmationPage() {
   const searchParams = useSearchParams()
   const [order, setOrder] = useState<OrderDetails | null>(null)
+  const [orderNumber, setOrderNumber] = useState("")
   const [loading, setLoading] = useState(true)
   const [downloading, setDownloading] = useState(false)
 
   useEffect(() => {
     const orderId = searchParams.get("order")
     const sessionId = searchParams.get("session_id")
+    const paymentSuccess = searchParams.get("payment") === "success"
 
     const fetchOrderDetails = async () => {
       try {
-        if (orderId) {
-          console.log("🔄 Obteniendo detalles de la orden:", orderId)
+        if (orderId && (paymentSuccess || sessionId)) {
+          // Actualizar el estado del pedido a "confirmed"
+          const updateResponse = await fetch("/api/orders/update-status", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              orderId: orderId,
+              status: "confirmed"
+            }),
+          })
+
+          if (updateResponse.ok) {
+            const data = await updateResponse.json()
+            setOrderNumber(data.orderNumber || `GF-${orderId}`)
+          }}
           
           // Obtener los detalles actuales de la orden
-          const response = await fetch(`/api/orders/${orderId}`)
-          if (response.ok) {
-            const orderData = await response.json()
+          const orderResponse = await fetch(`/api/orders/${orderId}`)
+          if (orderResponse.ok) {
+            const orderData = await orderResponse.json()
             setOrder(orderData)
-            console.log("📊 Datos de la orden:", orderData)
           } else {
             console.error("Error obteniendo detalles de la orden")
-          }
         }
       } catch (error) {
         console.error("Error verificando pedido:", error)

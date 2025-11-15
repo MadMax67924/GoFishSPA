@@ -118,7 +118,6 @@ export default function CheckoutForm() {
     e.preventDefault()
     setIsSubmitting(true)
 
-    console.log("🟡 Iniciando proceso de checkout...")
 
     try {
       // VALIDAR CONFIGURACIÓN RECURRENTE
@@ -146,22 +145,18 @@ export default function CheckoutForm() {
         }
       }
 
-      console.log("🔄 Obteniendo carrito...")
       const res = await fetch("/api/cart")
       if (!res.ok) throw new Error("Error al cargar el resumen del carrito")
     
       const cart = await res.json()
       const items = cart.items || []
-      console.log("📦 Items del carrito:", items)
     
       const subtotal = items.reduce((acc: number, item: any) => acc + item.price * item.quantity, 0)
       const shipping = subtotal > 30000 ? 0 : 5000
       const total = subtotal + shipping
 
-      console.log("💰 Totales - Subtotal:", subtotal, "Envío:", shipping, "Total:", total)
 
       const shouldRedirectToWhatsapp = total < 20000 && formData.region !== "Valparaíso"
-      console.log("📱 Redirigir a WhatsApp?", shouldRedirectToWhatsapp)
 
       const orderData = {
         ...formData,
@@ -175,7 +170,6 @@ export default function CheckoutForm() {
                 formData.paymentMethod === "webpay" ? "pending" : "confirmed"
       }
 
-      console.log("🔄 Creando orden en /api/orders...")
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: {
@@ -185,7 +179,6 @@ export default function CheckoutForm() {
       })
 
       const data = await response.json()
-      console.log("📊 Respuesta de /api/orders:", data)
 
       if (!response.ok) {
         throw new Error(data.error || "Error al procesar el pedido")
@@ -202,7 +195,6 @@ export default function CheckoutForm() {
       }
 
       if (formData.paymentMethod === "webpay") {
-        console.log("💳 Procesando pago con WebPay...")
         
         // ✅ CORRECCIÓN: Usar snake_case que espera payment-intent
         const completeOrderData = {
@@ -231,16 +223,11 @@ export default function CheckoutForm() {
           recurring_config: recurringConfig.isRecurring ? recurringConfig : null
         }
 
-        console.log("📦 Datos enviados a payment-intent:", completeOrderData)
-        console.log("🔍 Order ID:", data.orderId)
-        console.log("🔍 Order Number:", data.orderNumber)
 
         toast({
           title: "Creando sesión de pago",
           description: "Estamos preparando tu checkout seguro...",
         })
-
-        console.log("🔄 Llamando a /api/payment-intent...")
         
         try {
           // NUEVO: Usar endpoint específico para recurrentes si corresponde
@@ -260,7 +247,6 @@ export default function CheckoutForm() {
             }),
           })
 
-          console.log("📡 Respuesta de payment-intent recibida, status:", paymentIntentRes.status)
 
           if (!paymentIntentRes.ok) {
             const errorData = await paymentIntentRes.json()
@@ -269,9 +255,6 @@ export default function CheckoutForm() {
           }
 
           const paymentData = await paymentIntentRes.json()
-          console.log("📊 Datos de payment-intent:", paymentData)
-          
-          console.log("✅ Redirigiendo a Stripe:", paymentData.checkoutUrl)
           
           // Forzar la redirección inmediata
           if (paymentData.checkoutUrl) {
@@ -287,7 +270,6 @@ export default function CheckoutForm() {
         }
       }
 
-      console.log("✅ Pedido confirmado sin pago online")
       toast({
         title: "¡Pedido realizado con éxito!",
         description: `Número de pedido: ${data.orderNumber}`,
@@ -304,7 +286,6 @@ export default function CheckoutForm() {
       })
     } finally {
       setIsSubmitting(false)
-      console.log("🔚 Proceso de checkout finalizado")
     }
   }
 
