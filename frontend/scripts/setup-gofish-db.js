@@ -218,7 +218,33 @@ async function setupDatabase() {
     } else {
       console.log("✅ Tabla products ya existe")
     }
-
+     // Crear tabla de reseñas
+    if (!existingTables.includes("reviews")) {
+      console.log(" Creando tabla reviews...")
+      await connection.execute(`
+        CREATE TABLE reviews (
+          id VARCHAR(255) NOT NULL,
+          productId VARCHAR(255) NOT NULL,
+          texto VARCHAR(255) NOT NULL,
+          imagen VARCHAR(255) NULL,
+          fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          aprovado BOOLEAN DEFAULT FALSE,
+          rating INT NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+      console.log(" Tabla reviews creada")
+    }
+     // Crear tabla de sugerencias
+    if (!existingTables.includes("sugerencias")) {
+      console.log(" Creando tabla sugerencias...")
+      await connection.execute(`
+        CREATE TABLE sugerencias (
+          id VARCHAR(255) PRIMARY KEY,
+          texto VARCHAR(255) NOT NULL,
+          imagen VARCHAR(255) NULL,
+          fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+      console.log(" Tabla sugerencias creada")
+    }
     // VERIFICAR TABLA ORDER_ITEMS
     if (!existingTables.includes("order_items")) {
       console.log(" Creando tabla order_items...")
