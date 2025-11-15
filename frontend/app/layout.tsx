@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/providers/theme-provider"
 import { AppProviders } from "@/components/providers/app-providers"
 import { Toaster } from "sonner"
 import "./globals.css"
+import { DeploymentStatusIndicator } from '@/components/deployment/deployment-status'
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -27,6 +28,12 @@ export default function RootLayout({
             <Toaster richColors position="top-right" />
           </AppProviders>
         </ThemeProvider>
+        <footer className="bg-teal-900 text-white p-4">
+          <div className="container mx-auto flex justify-between items-center">
+            <div>© 2025 GoFish SpA - Distribuidora de productos marinos</div>
+            <DeploymentStatusIndicator />
+          </div>
+        </footer>
       </body>
     </html>
   )
