@@ -66,7 +66,6 @@ export default function MostrarHistorial() {
     const addToCart = async (productId: number, quantity: number) => {
         setIsLoading(productId);
         try {
-            console.log("Añadiendo al carrito:", { productId, quantity })
 
             const response = await fetch("/api/cart", {
                 method: "POST",
@@ -107,7 +106,6 @@ export default function MostrarHistorial() {
                 console.warn("No se pudo actualizar localStorage:", localStorageError)
             }
 
-            console.log("Producto añadido exitosamente")
             return true
 
         } catch (error: any) {

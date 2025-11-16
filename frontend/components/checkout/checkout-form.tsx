@@ -274,7 +274,7 @@ export default function CheckoutForm() {
         try {
           // NUEVO: Usar endpoint específico para recurrentes si corresponde
           const paymentEndpoint = recurringConfig.isRecurring 
-            ? "/api/payment-intent-recurring-orders" 
+            ? "/api/payment-intent-recurrin-orders" 
             : "/api/payment-intent"
 
           console.log(`📍 Usando endpoint: ${paymentEndpoint}`)

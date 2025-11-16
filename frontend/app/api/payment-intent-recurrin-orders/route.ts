@@ -3,7 +3,7 @@ import Stripe from "stripe"
 import { executeQuery } from "@/lib/mysql"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-09-30.clover",
+  apiVersion: "2025-10-29.clover",
 })
 
 // Endpoint especializado para crear sesiones de checkout recurrentes en Stripe
@@ -131,12 +131,6 @@ export async function POST(request: Request) {
     return NextResponse.json({
       checkoutUrl: session.url,
       sessionId: session.id,
-      isRecurring: true,
-      subscriptionId: session.subscription?.toString() || null,
-      productId: product.id,
-      priceId: price.id,
-      intervalMonths: intervalMonths,
-      totalCycles: totalCycles
     })
 
   } catch (error) {
@@ -164,7 +158,7 @@ export async function GET(request: Request) {
 
     if (subscriptionId) {
       // Obtener información de la suscripción desde Stripe
-      const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId) as any
       
       return NextResponse.json({
         subscription: {
@@ -173,7 +167,7 @@ export async function GET(request: Request) {
           current_period_start: subscription.current_period_start,
           current_period_end: subscription.current_period_end,
           cancel_at_period_end: subscription.cancel_at_period_end,
-          items: subscription.items.data.map(item => ({
+          items: subscription.items.data.map((item: Stripe.SubscriptionItem) => ({
             price_id: item.price.id,
             quantity: item.quantity
           }))
@@ -194,7 +188,7 @@ export async function GET(request: Request) {
         )
       }
 
-      const subscription = subscriptions.data[0]
+      const subscription = subscriptions.data[0] as any
       
       return NextResponse.json({
         subscription: {
@@ -232,7 +226,7 @@ export async function DELETE(request: Request) {
     // Cancelar suscripción en Stripe (al final del periodo actual)
     const canceledSubscription = await stripe.subscriptions.update(subscriptionId, {
       cancel_at_period_end: true
-    })
+    }) as any
 
     console.log(`✅ Suscripción ${subscriptionId} programada para cancelación`)
 
@@ -251,7 +245,7 @@ export async function DELETE(request: Request) {
     return NextResponse.json({
       success: true,
       message: "Suscripción programada para cancelación",
-      subscription: {
+      subscription : {
         id: canceledSubscription.id,
         status: canceledSubscription.status,
         cancel_at_period_end: canceledSubscription.cancel_at_period_end,
