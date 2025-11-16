@@ -100,6 +100,33 @@ console.log(`📊 Método pago: ${paymentMethod}, Status: ${status}`);
 
     const orderId = (orderResult as any).insertId
 
+    // 🎯 NUEVO: Generar PDF automáticamente (asíncrono, no bloqueante)
+    setTimeout(async () => {
+      try {
+        console.log("📄 [PDF AUTO] Iniciando generación para orden:", orderNumber)
+        
+        const pdfResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/generate-pdf`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId })
+        })
+
+        if (pdfResponse.ok) {
+          const pdfResult = await pdfResponse.json()
+          console.log("✅ [PDF AUTO] PDF generado exitosamente:", pdfResult.filePath)
+        } else {
+          console.warn("⚠️ [PDF AUTO] Falló generación de PDF, status:", pdfResponse.status)
+        }
+      } catch (pdfError) {
+        if (pdfError instanceof Error) {
+          console.error("❌ [PDF AUTO] Error en generación automática:", pdfError.message)
+        } else {
+          console.error("❌ [PDF AUTO] Error en generación automática:", String(pdfError))
+        }
+        // Error silencioso - no afecta la experiencia del usuario
+      }
+    }, 1000) // Delay de 1 segundo
+
     // NUEVO: Crear orden recurrente si está configurado
     if (isRecurring && recurringConfig) {
       try {
@@ -120,7 +147,6 @@ console.log(`📊 Método pago: ${paymentMethod}, Status: ${status}`);
         }
       } catch (recurringError) {
         console.error("❌ Error en creación de orden recurrente:", recurringError)
-        // No bloquear la orden principal por error en recurrente
       }
     }
 
