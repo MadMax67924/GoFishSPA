@@ -13,7 +13,16 @@
       "source": "/health",
       "destination": "/api/health",
       "permanent": false
+    },
+    {
+      "rewrites": [
+        {
+          "source": "/(.*)",
+          "destination": "/"
+        }
+      ]
     }
+    
   ],
   "headers": [
     {
@@ -30,4 +39,5 @@
       ]
     }
   ]
+  
 }
