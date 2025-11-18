@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm install --save-dev typescript @types/react @types/node && npm run build",
+  "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "installCommand": "npm i",
   "framework": "nextjs",
