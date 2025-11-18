@@ -14,6 +14,9 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  devIndicators: {
+    buildActivity: true,
+  },
   webpack: (config) => {
     config.resolve.alias['@'] = path.resolve(__dirname);
     return config;
