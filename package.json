@@ -21,6 +21,9 @@
     "pdfkit-table": "^0.1.99"
   },
   "devDependencies": {
-    "@types/express": "^5.0.4"
+    "@types/express": "^5.0.4",
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.6",
+    "typescript": "^5.9.3"
   }
 }

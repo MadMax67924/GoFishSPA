@@ -1,7 +1,7 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
-  "installCommand": "npm i",
+  "installCommand": "pnpm install --save-dev typescript @types/react @types/node",
   "framework": "nextjs",
   "functions": {
     "app/api/**/*.ts": {
@@ -35,5 +35,10 @@
         }
       ]
     }
-  ]
+  ],
+  "build": {
+    "env": {
+      "NODE_ENV": "production"
+    }
+  }
 }
