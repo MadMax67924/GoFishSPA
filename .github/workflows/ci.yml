@@ -31,4 +31,3 @@ jobs:
       - name: Compilar proyecto
         run: npm run build
         working-directory: ./frontend
-name: CI Pipeline
