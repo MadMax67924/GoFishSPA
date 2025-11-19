@@ -15,7 +15,8 @@ jobs:
         run: node -v
       - name: Instalar dependencias
         run: npm install
-
+      - name: Instalar mysql2        
+        run: npm install mysql2
       - name: Preparar datos (db:setup)
         run: npm run db:setup
 
