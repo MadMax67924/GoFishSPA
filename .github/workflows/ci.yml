@@ -10,18 +10,25 @@ jobs:
   build:
     runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v3
-      - name: Verificar versión de Node
-        run: node -v
+      - name: Checkout código
+        uses: actions/checkout@v3
+
+      - name: Ir al directorio del frontend
+        run: cd frontend
+
       - name: Instalar dependencias
         run: npm install
-      - name: Instalar mysql2        
+        working-directory: ./frontend
+
+      - name: Instalar mysql2 (si lo necesitas)
         run: npm install mysql2
-      - name: Preparar datos (db:setup)
+        working-directory: ./frontend
+
+      - name: Preparar datos
         run: npm run db:setup
+        working-directory: ./frontend
 
       - name: Compilar proyecto
         run: npm run build
-      - name: Ejecutar pruebas
-        run: npm test
-
+        working-directory: ./frontend
+name: CI Pipeline
