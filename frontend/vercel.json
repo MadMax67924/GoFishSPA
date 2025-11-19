@@ -2,7 +2,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "framework": "nextjs",
-  "installCommand": "npm install",
+  "installCommand": "npm install && npm install --save-dev typescript",
   "functions": {
     "app/api/**/*.ts": {
       "maxDuration": 10
