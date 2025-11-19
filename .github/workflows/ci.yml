@@ -1,0 +1,32 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - respaldo3_baseorde
+  pull_request:
+
+jobs:
+  build:
+    runs-on: self-hosted  # Usa tu runner instalado en Windows
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v3
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Preparar datos (db:setup)
+        run: npm run db:setup
+
+      - name: Compilar proyecto
+        run: npm run build
+
+      - name: Ejecutar pruebas
+        run: npm test
+      - name: Deploy a Vercel  run: npx vercel --prod --token ${{ prj_zdrqUMabmlIMXyN7QQyAvPEcXr9j }}
