@@ -9,18 +9,6 @@ on:
 jobs:
   build:
     runs-on: self-hosted  # Tu runner en Windows
-    env:
-    DB_HOST: ${{ 127.0.0.1 }}
-    DB_PORT: ${{ 3306 }}
-    DB_USER: ${{ root }}
-    DB_PASSWORD: ${{ toki1801 }}
-    DB_NAME: ${{ gofish }}
-    RESEND_API_KEY: ${{ re_XbbCd682_9FCXbRraCLTeA4fuDs1inG82 }}
-    FROM_EMAIL: ${{ gofishspa@resend.dev }}
-    VERCEL_WEBHOOK_SECRET: ${{ gofish_vercel_webhook_secret_2024 }}
-    NEXT_PUBLIC_BASE_URL: ${{ https://gofish-spa.vercel.app/ }}
-    APP_URL: ${{ https://gofish-spa.vercel.app/ }}
-    NEXTAUTH_URL: ${{ https://gofish-spa.vercel.app/ }}
 
     steps:
       - name: Checkout código
