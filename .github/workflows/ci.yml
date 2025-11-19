@@ -28,5 +28,4 @@ jobs:
         run: npm run build
       - name: Ejecutar pruebas
         run: npm test
-      - name: Deploy a Vercel
-        run: npx vercel --prod --token ${{prj_zdrqUMabmlIMXyN7QQyAvPEcXr9j}}
+
