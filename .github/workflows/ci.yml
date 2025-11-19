@@ -8,16 +8,11 @@ on:
 
 jobs:
   build:
-    runs-on: self-hosted  # Usa tu runner instalado en Windows
+    runs-on: self-hosted
     steps:
-      - name: Checkout código
-        uses: actions/checkout@v3
-
-      - name: Configurar Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
+      - uses: actions/checkout@v3
+      - name: Verificar versión de Node
+        run: node -v
       - name: Instalar dependencias
         run: npm install
 
