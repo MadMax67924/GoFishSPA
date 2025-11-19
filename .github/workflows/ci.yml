@@ -8,26 +8,23 @@ on:
 
 jobs:
   build:
-    runs-on: self-hosted
+    runs-on: self-hosted  # Tu runner en Windows
+
     steps:
       - name: Checkout código
         uses: actions/checkout@v3
 
-      - name: Ir al directorio del frontend
-        run: cd frontend
-
-      - name: Instalar dependencias
+      - name: Instalar dependencias en raíz
         run: npm install
-        working-directory: ./frontend
 
       - name: Instalar mysql2 (si lo necesitas)
         run: npm install mysql2
-        working-directory: ./frontend
 
-      - name: Preparar datos
+      - name: Preparar datos (db:setup desde main)
         run: npm run db:setup
-        working-directory: ./frontend
 
-      - name: Compilar proyecto
-        run: npm run build
-        working-directory: ./frontend
+      - name: Instalar dependencias en frontend
+        run: npm --prefix frontend install
+
+      - name: Compilar proyecto (desde frontend)
+        run: npm --prefix frontend run build
