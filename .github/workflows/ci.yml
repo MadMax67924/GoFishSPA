@@ -3,7 +3,7 @@ name: CI Pipeline
 on:
   push:
     branches:
-      - respaldo3_baseorde
+      - respaldo3_baseordenada2
   pull_request:
 
 jobs:
@@ -26,7 +26,7 @@ jobs:
 
       - name: Compilar proyecto
         run: npm run build
-
       - name: Ejecutar pruebas
         run: npm test
-      - name: Deploy a Vercel  run: npx vercel --prod --token ${{ prj_zdrqUMabmlIMXyN7QQyAvPEcXr9j }}
+      - name: Deploy a Vercel
+        run: npx vercel --prod --token ${{prj_zdrqUMabmlIMXyN7QQyAvPEcXr9j}}
