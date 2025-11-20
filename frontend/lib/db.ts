@@ -1,14 +1,22 @@
 import mysql from 'mysql2/promise'
 
+// Validar variables de entorno en producción
+if (!process.env.DB_HOST) {
+  throw new Error("DATABASE ENV VARIABLES NOT FOUND")
+}
+
 const dbConfig = {
-    host: process.env.DB_HOST || "127.0.0.1",
+    host: process.env.DB_HOST!,
     port: Number(process.env.DB_PORT) || 3306,
-    user: process.env.DB_USER || "root",
-    password: process.env.DB_PASSWORD || "toki1801",
-    database: process.env.DB_NAME || "gofish",
+    user: process.env.DB_USER!,
+    password: process.env.DB_PASSWORD!,
+    database: process.env.DB_NAME!,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
+    ssl: {
+        rejectUnauthorized: false
+    }
 }
 
 const pool = mysql.createPool(dbConfig)
