@@ -333,7 +333,7 @@ async function setupDatabase() {
         console.log("📝 Agregando columna estado a sugerencias...")
         await connection.execute(`
           ALTER TABLE sugerencias 
-          ADD COLUMN estado ENUM('pendiente', 'revisar_despues, 'aprobada', 'rechazada') 
+          ADD COLUMN estado ENUM('pendiente', 'revisar_despues', 'aprobada', 'rechazada') 
           DEFAULT 'pendiente'
         `)
         console.log("✅ Columna estado agregada a sugerencias")
@@ -429,12 +429,13 @@ async function setupDatabase() {
       await connection.execute(`
         CREATE TABLE contact_info (
           id INT AUTO_INCREMENT PRIMARY KEY,
-          type ENUM('address', 'phone', 'email', 'schedule', 'social', 'other') NOT NULL,
-          title VARCHAR(255) NOT NULL,
-          value VARCHAR(500) NOT NULL,
-          icon VARCHAR(100) NULL,
-          display_order INT DEFAULT 0,
-          is_active BOOLEAN DEFAULT TRUE,
+          type VARCHAR(50) NOT NULL,
+          title VARCHAR(100) NOT NULL,
+          primary_text VARCHAR(255) NOT NULL,
+          secondary_text VARCHAR(255) NULL,
+          icon VARCHAR(50) NOT NULL,
+          display_order INT DEFAULT 1,
+          is_active BOOLEAN DEFAULT 1,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
           INDEX idx_type (type),
@@ -445,20 +446,20 @@ async function setupDatabase() {
       console.log("✅ Tabla contact_info creada")
 
       // Insertar datos iniciales de contacto
-      console.log(" Insertando datos iniciales de contacto...")
+      console.log("📝 Insertando datos iniciales de contacto...")
       const contactData = [
-        ['address', 'Dirección', 'Av. Principal 1234, Santiago, Chile', 'map-pin', 1, true],
-        ['phone', 'Teléfono', '+56 2 2345 6789', 'phone', 2, true],
-        ['email', 'Email', 'contacto@gofish.cl', 'mail', 3, true],
-        ['schedule', 'Horario de atención', 'Lunes a Viernes: 9:00 - 18:00 hrs', 'clock', 4, true],
-        ['schedule', 'Horario fin de semana', 'Sábado: 10:00 - 14:00 hrs', 'clock', 5, true],
-        ['social', 'WhatsApp', '+56 9 8765 4321', 'message-circle', 6, true],
-        ['social', 'Instagram', '@gofish_chile', 'instagram', 7, true]
+        ['address', 'Dirección', 'PC 58 Lajarilla del Puente', 'Concón, V Región', 'map-pin', 1, true],
+        ['phone', 'Teléfono', '+56 9 8765 4321', 'Lun - Vie: 8:00 - 18:00', 'phone', 2, true],
+        ['email', 'Email', 'contacto@gofish.cl', 'Respuesta en 24h', 'mail', 3, true],
+        ['schedule', 'Horario de atención', 'Lunes a Viernes: 9:00 - 18:00 hrs', NULL, 'clock', 4, true],
+        ['schedule', 'Horario fin de semana', 'Sábado: 10:00 - 14:00 hrs', NULL, 'clock', 5, true],
+        ['social', 'WhatsApp', '+56 9 8765 4321', NULL, 'message-circle', 6, true],
+        ['social', 'Instagram', '@gofish_chile', NULL, 'instagram', 7, true]
       ]
 
       for (const data of contactData) {
         await connection.execute(
-          "INSERT INTO contact_info (type, title, value, icon, display_order, is_active) VALUES (?, ?, ?, ?, ?, ?)",
+          "INSERT INTO contact_info (type, title, primary_text, secondary_text, icon, display_order, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)",
           data
         )
       }
@@ -466,29 +467,84 @@ async function setupDatabase() {
     } else {
       console.log("✅ Tabla contact_info ya existe")
       
-      // Verificar si hay datos en la tabla
-      const [contactCount] = await connection.execute("SELECT COUNT(*) as count FROM contact_info")
-      if (contactCount[0].count === 0) {
-        console.log(" Insertando datos iniciales de contacto...")
+      // Verificar si la tabla tiene la estructura correcta
+      const [contactColumns] = await connection.execute(`
+        SELECT COLUMN_NAME 
+        FROM information_schema.COLUMNS 
+        WHERE TABLE_SCHEMA = ? 
+        AND TABLE_NAME = 'contact_info'
+      `, [config.database])
+      
+      const columnNames = contactColumns.map(col => col.COLUMN_NAME)
+      
+      // Si no tiene primary_text, actualizar estructura
+      if (!columnNames.includes('primary_text')) {
+        console.log("📝 Actualizando estructura de contact_info...")
+        
+        // Eliminar y recrear la tabla con la estructura correcta
+        await connection.execute("DROP TABLE contact_info")
+        
+        await connection.execute(`
+          CREATE TABLE contact_info (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            type VARCHAR(50) NOT NULL,
+            title VARCHAR(100) NOT NULL,
+            primary_text VARCHAR(255) NOT NULL,
+            secondary_text VARCHAR(255) NULL,
+            icon VARCHAR(50) NOT NULL,
+            display_order INT DEFAULT 1,
+            is_active BOOLEAN DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_type (type),
+            INDEX idx_display_order (display_order),
+            INDEX idx_is_active (is_active)
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        `)
+        
+        // Insertar los datos correctos
         const contactData = [
-          ['address', 'Dirección', 'Av. Principal 1234, Santiago, Chile', 'map-pin', 1, true],
-          ['phone', 'Teléfono', '+56 2 2345 6789', 'phone', 2, true],
-          ['email', 'Email', 'contacto@gofish.cl', 'mail', 3, true],
-          ['schedule', 'Horario de atención', 'Lunes a Viernes: 9:00 - 18:00 hrs', 'clock', 4, true],
-          ['schedule', 'Horario fin de semana', 'Sábado: 10:00 - 14:00 hrs', 'clock', 5, true],
-          ['social', 'WhatsApp', '+56 9 8765 4321', 'message-circle', 6, true],
-          ['social', 'Instagram', '@gofish_chile', 'instagram', 7, true]
+          ['address', 'Dirección', 'PC 58 Lajarilla del Puente', 'Concón, V Región', 'map-pin', 1, true],
+          ['phone', 'Teléfono', '+56 9 8765 4321', 'Lun - Vie: 8:00 - 18:00', 'phone', 2, true],
+          ['email', 'Email', 'contacto@gofish.cl', 'Respuesta en 24h', 'mail', 3, true],
+          ['schedule', 'Horario de atención', 'Lunes a Viernes: 9:00 - 18:00 hrs', NULL, 'clock', 4, true],
+          ['schedule', 'Horario fin de semana', 'Sábado: 10:00 - 14:00 hrs', NULL, 'clock', 5, true],
+          ['social', 'WhatsApp', '+56 9 8765 4321', NULL, 'message-circle', 6, true],
+          ['social', 'Instagram', '@gofish_chile', NULL, 'instagram', 7, true]
         ]
 
         for (const data of contactData) {
           await connection.execute(
-            "INSERT INTO contact_info (type, title, value, icon, display_order, is_active) VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO contact_info (type, title, primary_text, secondary_text, icon, display_order, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)",
             data
           )
         }
-        console.log("✅ Datos de contacto insertados correctamente")
+        console.log("✅ Estructura actualizada y datos insertados")
       } else {
-        console.log(`✅ Ya existen ${contactCount[0].count} registros en contact_info`)
+        // Verificar si hay datos en la tabla
+        const [contactCount] = await connection.execute("SELECT COUNT(*) as count FROM contact_info")
+        if (contactCount[0].count === 0) {
+          console.log("📝 Insertando datos iniciales de contacto...")
+          const contactData = [
+            ['address', 'Dirección', 'PC 58 Lajarilla del Puente', 'Concón, V Región', 'map-pin', 1, true],
+            ['phone', 'Teléfono', '+56 9 8765 4321', 'Lun - Vie: 8:00 - 18:00', 'phone', 2, true],
+            ['email', 'Email', 'contacto@gofish.cl', 'Respuesta en 24h', 'mail', 3, true],
+            ['schedule', 'Horario de atención', 'Lunes a Viernes: 9:00 - 18:00 hrs', NULL, 'clock', 4, true],
+            ['schedule', 'Horario fin de semana', 'Sábado: 10:00 - 14:00 hrs', NULL, 'clock', 5, true],
+            ['social', 'WhatsApp', '+56 9 8765 4321', NULL, 'message-circle', 6, true],
+            ['social', 'Instagram', '@gofish_chile', NULL, 'instagram', 7, true]
+          ]
+
+          for (const data of contactData) {
+            await connection.execute(
+              "INSERT INTO contact_info (type, title, primary_text, secondary_text, icon, display_order, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)",
+              data
+            )
+          }
+          console.log("✅ Datos de contacto insertados correctamente")
+        } else {
+          console.log(`✅ Ya existen ${contactCount[0].count} registros en contact_info`)
+        }
       }
     }
 
