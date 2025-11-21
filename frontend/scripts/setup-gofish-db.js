@@ -194,7 +194,33 @@ async function setupDatabase() {
     } else {
       console.log("✅ Tabla recurring_orders ya existe")
     }
-
+    
+    // VERIFICAR TABLA DEPLOYMENT_LOGS (NUEVA TABLA PARA LOGS DE DESPLIEGUE)
+    if (!existingTables.includes("deployment_logs")) {
+      console.log("🚀 Creando tabla deployment_logs...")
+      await connection.execute(`
+        CREATE TABLE deployment_logs (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          deployment_id VARCHAR(255) NOT NULL UNIQUE,
+          environment VARCHAR(50) NOT NULL DEFAULT 'production',
+          status ENUM('started', 'success', 'failed', 'in_progress') NOT NULL DEFAULT 'started',
+          timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          error_message TEXT NULL,
+          user_activity_during_deploy BOOLEAN DEFAULT FALSE,
+          database_health_check BOOLEAN DEFAULT TRUE,
+          api_tests_passed BOOLEAN DEFAULT TRUE,
+          deployment_duration_seconds INT NULL,
+          
+          INDEX idx_deployment_id (deployment_id),
+          INDEX idx_status (status),
+          INDEX idx_timestamp (timestamp),
+          INDEX idx_environment (environment)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+      console.log("✅ Tabla deployment_logs creada")
+    } else {
+      console.log("✅ Tabla deployment_logs ya existe")
+    }
     
 
     // VERIFICAR TABLA PRODUCTS
@@ -332,9 +358,14 @@ async function setupDatabase() {
       if (existingTables.includes("sugerencias")) {
         await connection.execute("CREATE INDEX IF NOT EXISTS idx_sugerencias_fecha ON sugerencias(fecha)")
       }
-      console.log(" Índices creados/verificados correctamente")
+      if (existingTables.includes("deployment_logs")) {
+        await connection.execute("CREATE INDEX IF NOT EXISTS idx_deployment_logs_status ON deployment_logs(status)")
+        await connection.execute("CREATE INDEX IF NOT EXISTS idx_deployment_logs_environment ON deployment_logs(environment)")
+        await connection.execute("CREATE INDEX IF NOT EXISTS idx_deployment_logs_timestamp ON deployment_logs(timestamp)")
+      }
+      console.log("✅ Índices creados/verificados correctamente")
     } catch (error) {
-      console.log(" Los índices ya existen o hubo un error al crearlos:", error.message)
+      console.log("⚠️ Los índices ya existen o hubo un error al crearlos:", error.message)
     }
 
     const [productCount] = await connection.execute("SELECT COUNT(*) as count FROM products")
