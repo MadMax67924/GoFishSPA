@@ -260,16 +260,44 @@ async function setupDatabase() {
       console.log(" Tabla reviews creada")
     }
      // Crear tabla de sugerencias
+    // VERIFICAR TABLA SUGERENCIAS - ACTUALIZADA CON COLUMNA ESTADO
     if (!existingTables.includes("sugerencias")) {
-      console.log(" Creando tabla sugerencias...")
+      console.log("📝 Creando tabla sugerencias...")
       await connection.execute(`
         CREATE TABLE sugerencias (
           id VARCHAR(255) PRIMARY KEY,
-          texto VARCHAR(255) NOT NULL,
+          texto VARCHAR(500) NOT NULL,
           imagen VARCHAR(255) NULL,
-          fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+          fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          estado ENUM('pendiente', 'revisar_despues', 'aprobada', 'rechazada') DEFAULT 'pendiente',
+          INDEX idx_sugerencias_fecha (fecha),
+          INDEX idx_sugerencias_estado (estado)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `)
-      console.log(" Tabla sugerencias creada")
+      console.log("✅ Tabla sugerencias creada con columna estado")
+    } else {
+      console.log("✅ Tabla sugerencias ya existe")
+      
+      // Verificar si existe la columna estado
+      const [estadoColumn] = await connection.execute(`
+        SELECT COLUMN_NAME 
+        FROM information_schema.COLUMNS 
+        WHERE TABLE_SCHEMA = ? 
+        AND TABLE_NAME = 'sugerencias' 
+        AND COLUMN_NAME = 'estado'
+      `, [config.database])
+      
+      if (estadoColumn.length === 0) {
+        console.log("📝 Agregando columna estado a sugerencias...")
+        await connection.execute(`
+          ALTER TABLE sugerencias 
+          ADD COLUMN estado ENUM('pendiente', 'revisar_despues, 'aprobada', 'rechazada') 
+          DEFAULT 'pendiente'
+        `)
+        console.log("✅ Columna estado agregada a sugerencias")
+      } else {
+        console.log("✅ Columna estado ya existe en sugerencias")
+      }
     }
     // VERIFICAR TABLA ORDER_ITEMS
     if (!existingTables.includes("order_items")) {
