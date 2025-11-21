@@ -222,6 +222,48 @@ async function setupDatabase() {
       console.log("✅ Tabla deployment_logs ya existe")
     }
     
+    // Crear tabla de proveedores
+    if (!existingTables.includes("providers")) {
+      console.log(" Creando tabla providers...")
+      await connection.execute(`
+        CREATE TABLE providers (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          company VARCHAR(255) NOT NULL,
+          representative VARCHAR(255) NOT NULL,
+          rut VARCHAR(20) NOT NULL UNIQUE,
+          address TEXT NOT NULL,
+          products TEXT NOT NULL,
+          email VARCHAR(255) NOT NULL,
+          phone VARCHAR(20) NOT NULL,
+          capacity VARCHAR(255) NULL,
+          certifications TEXT NULL,
+          website VARCHAR(255) NULL,
+          notes TEXT NULL,
+          status ENUM('pendiente', 'aprobado', 'rechazado') DEFAULT 'pendiente',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+      console.log(" Tabla providers creada")
+    }
+
+    // Crear tabla de FAQs
+    if (!existingTables.includes("faqs")) {
+      console.log(" Creando tabla faqs...")
+      await connection.execute(`
+        CREATE TABLE faqs (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          question VARCHAR(500) NOT NULL,
+          answer TEXT NOT NULL,
+          category VARCHAR(100) DEFAULT 'general',
+          display_order INT DEFAULT 0,
+          is_active BOOLEAN DEFAULT TRUE,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+      console.log(" Tabla faqs creada")
+    }
 
     // VERIFICAR TABLA PRODUCTS
     if (!existingTables.includes("products")) {
@@ -321,6 +363,24 @@ async function setupDatabase() {
       console.log("✅ Tabla order_items ya existe")
     }
 
+    // VERIFICAR TABLA USER_WISHLIST (NUEVA TABLA PARA LISTA DE DESEOS)
+    if (!existingTables.includes("user_wishlist")) {
+      console.log("💫 Creando tabla user_wishlist...")
+      await connection.execute(`
+        CREATE TABLE user_wishlist (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          user_id INT NOT NULL,
+          product_id INT NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+          FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+          UNIQUE KEY unique_user_product (user_id, product_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+      console.log("✅ Tabla user_wishlist creada")
+    } else {
+      console.log("✅ Tabla user_wishlist ya existe")
+    }
 
     // VERIFICAR TABLA CART_ITEMS
     if (!existingTables.includes("cart_items")) {
@@ -363,6 +423,75 @@ async function setupDatabase() {
       console.log("✅ Tabla contacts ya existe")
     }
 
+    // VERIFICAR TABLA CONTACT_INFO (NUEVA TABLA PARA INFORMACIÓN DE CONTACTO)
+    if (!existingTables.includes("contact_info")) {
+      console.log("📞 Creando tabla contact_info...")
+      await connection.execute(`
+        CREATE TABLE contact_info (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          type ENUM('address', 'phone', 'email', 'schedule', 'social', 'other') NOT NULL,
+          title VARCHAR(255) NOT NULL,
+          value VARCHAR(500) NOT NULL,
+          icon VARCHAR(100) NULL,
+          display_order INT DEFAULT 0,
+          is_active BOOLEAN DEFAULT TRUE,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          INDEX idx_type (type),
+          INDEX idx_display_order (display_order),
+          INDEX idx_is_active (is_active)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+      console.log("✅ Tabla contact_info creada")
+
+      // Insertar datos iniciales de contacto
+      console.log(" Insertando datos iniciales de contacto...")
+      const contactData = [
+        ['address', 'Dirección', 'Av. Principal 1234, Santiago, Chile', 'map-pin', 1, true],
+        ['phone', 'Teléfono', '+56 2 2345 6789', 'phone', 2, true],
+        ['email', 'Email', 'contacto@gofish.cl', 'mail', 3, true],
+        ['schedule', 'Horario de atención', 'Lunes a Viernes: 9:00 - 18:00 hrs', 'clock', 4, true],
+        ['schedule', 'Horario fin de semana', 'Sábado: 10:00 - 14:00 hrs', 'clock', 5, true],
+        ['social', 'WhatsApp', '+56 9 8765 4321', 'message-circle', 6, true],
+        ['social', 'Instagram', '@gofish_chile', 'instagram', 7, true]
+      ]
+
+      for (const data of contactData) {
+        await connection.execute(
+          "INSERT INTO contact_info (type, title, value, icon, display_order, is_active) VALUES (?, ?, ?, ?, ?, ?)",
+          data
+        )
+      }
+      console.log("✅ Datos de contacto insertados correctamente")
+    } else {
+      console.log("✅ Tabla contact_info ya existe")
+      
+      // Verificar si hay datos en la tabla
+      const [contactCount] = await connection.execute("SELECT COUNT(*) as count FROM contact_info")
+      if (contactCount[0].count === 0) {
+        console.log(" Insertando datos iniciales de contacto...")
+        const contactData = [
+          ['address', 'Dirección', 'Av. Principal 1234, Santiago, Chile', 'map-pin', 1, true],
+          ['phone', 'Teléfono', '+56 2 2345 6789', 'phone', 2, true],
+          ['email', 'Email', 'contacto@gofish.cl', 'mail', 3, true],
+          ['schedule', 'Horario de atención', 'Lunes a Viernes: 9:00 - 18:00 hrs', 'clock', 4, true],
+          ['schedule', 'Horario fin de semana', 'Sábado: 10:00 - 14:00 hrs', 'clock', 5, true],
+          ['social', 'WhatsApp', '+56 9 8765 4321', 'message-circle', 6, true],
+          ['social', 'Instagram', '@gofish_chile', 'instagram', 7, true]
+        ]
+
+        for (const data of contactData) {
+          await connection.execute(
+            "INSERT INTO contact_info (type, title, value, icon, display_order, is_active) VALUES (?, ?, ?, ?, ?, ?)",
+            data
+          )
+        }
+        console.log("✅ Datos de contacto insertados correctamente")
+      } else {
+        console.log(`✅ Ya existen ${contactCount[0].count} registros en contact_info`)
+      }
+    }
+
     // Crear índices adicionales para mejorar el rendimiento
     console.log(" Creando índices adicionales...")
     try {
@@ -382,6 +511,20 @@ async function setupDatabase() {
       }
       if (existingTables.includes("order_items")) {
         await connection.execute("CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id)")
+      }
+      if (existingTables.includes("user_wishlist")) {
+        await connection.execute("CREATE INDEX IF NOT EXISTS idx_wishlist_user_id ON user_wishlist(user_id)")
+        await connection.execute("CREATE INDEX IF NOT EXISTS idx_wishlist_product_id ON user_wishlist(product_id)")
+      }
+      if (existingTables.includes("faqs")) {
+        await connection.execute("CREATE INDEX IF NOT EXISTS idx_faqs_category ON faqs(category)")
+        await connection.execute("CREATE INDEX IF NOT EXISTS idx_faqs_display_order ON faqs(display_order)")
+        await connection.execute("CREATE INDEX IF NOT EXISTS idx_faqs_active ON faqs(is_active)")
+      }
+      if (existingTables.includes("contact_info")) {
+        await connection.execute("CREATE INDEX IF NOT EXISTS idx_contact_info_type ON contact_info(type)")
+        await connection.execute("CREATE INDEX IF NOT EXISTS idx_contact_info_display_order ON contact_info(display_order)")
+        await connection.execute("CREATE INDEX IF NOT EXISTS idx_contact_info_active ON contact_info(is_active)")
       }
       if (existingTables.includes("sugerencias")) {
         await connection.execute("CREATE INDEX IF NOT EXISTS idx_sugerencias_fecha ON sugerencias(fecha)")
@@ -507,6 +650,69 @@ async function setupDatabase() {
       console.log(` Ya existen ${productCount[0].count} productos en la base de datos`)
     }
 
+    // Verificar si ya hay FAQs e insertar datos iniciales
+    const [faqCount] = await connection.execute("SELECT COUNT(*) as count FROM faqs")
+
+    if (faqCount[0].count === 0) {
+      console.log(" Insertando FAQs iniciales...")
+
+      const faqs = [
+        [
+          "¿Cuál es el tiempo de entrega?",
+          "Entregamos en 24-48 horas en la V Región. Para otras regiones, consulta tiempos específicos. Nuestro equipo se encarga de mantener la cadena de frío durante todo el proceso.",
+          "general",
+          1,
+          true
+        ],
+        [
+          "¿Cómo garantizan la frescura?",
+          "Mantenemos la cadena de frío desde la captura hasta la entrega con transporte refrigerado especializado. Todos nuestros productos son procesados el mismo día de su captura.",
+          "general",
+          2,
+          true
+        ],
+        [
+          "¿Cuál es el pedido mínimo?",
+          "No tenemos pedido mínimo. Puedes comprar desde 1 kg de cualquier producto. Sin embargo, para pedidos superiores a $50.000 el envío es gratuito en la V Región.",
+          "general",
+          3,
+          true
+        ],
+        [
+          "¿Aceptan devoluciones?",
+          "Sí, aceptamos devoluciones dentro de las primeras 2 horas de entrega si el producto no cumple con nuestros estándares de calidad. Tu satisfacción es nuestra prioridad.",
+          "general",
+          4,
+          true
+        ],
+        [
+          "¿Qué métodos de pago aceptan?",
+          "Aceptamos transferencias bancarias, WebPay (tarjetas de crédito/débito) y pago en efectivo contra entrega. Todos los métodos son seguros y confiables.",
+          "general",
+          5,
+          true
+        ],
+        [
+          "¿Hacen envíos a regiones?",
+          "Sí, realizamos envíos a todo Chile. Los costos y tiempos varían según la región. Contacta con nosotros para obtener información específica de tu zona.",
+          "general",
+          6,
+          true
+        ]
+      ]
+
+      for (const faq of faqs) {
+        await connection.execute(
+          "INSERT INTO faqs (question, answer, category, display_order, is_active) VALUES (?, ?, ?, ?, ?)",
+          faq
+        )
+      }
+
+      console.log(" FAQs iniciales insertadas correctamente")
+    } else {
+      console.log(` Ya existen ${faqCount[0].count} FAQs en la base de datos`)
+    }
+
     // Verificar si ya hay usuarios admin
     const [adminCount] = await connection.execute('SELECT COUNT(*) as count FROM users WHERE role = "admin"')
     console.log(`👤 Usuarios admin existentes: ${adminCount[0].count}`)
@@ -536,10 +742,12 @@ async function setupDatabase() {
     const [finalProductCount] = await connection.execute("SELECT COUNT(*) as count FROM products")
     const [finalUserCount] = await connection.execute("SELECT COUNT(*) as count FROM users")
     const [finalTables] = await connection.execute("SHOW TABLES")
+    const [finalFaqCount] = await connection.execute("SELECT COUNT(*) as count FROM faqs")
 
     console.log(`   - Productos: ${finalProductCount[0].count}`)
     console.log(`   - Usuarios: ${finalUserCount[0].count}`)
     console.log(`   - Tablas: ${finalTables.length}`)
+    console.log(`   - FAQs: ${finalFaqCount[0].count}`)
     console.log("   - Base de datos: gofish")
     console.log("   - Host: 127.0.0.1:3306")
 
