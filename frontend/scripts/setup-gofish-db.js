@@ -451,10 +451,10 @@ async function setupDatabase() {
         ['address', 'Dirección', 'PC 58 Lajarilla del Puente', 'Concón, V Región', 'map-pin', 1, true],
         ['phone', 'Teléfono', '+56 9 8765 4321', 'Lun - Vie: 8:00 - 18:00', 'phone', 2, true],
         ['email', 'Email', 'contacto@gofish.cl', 'Respuesta en 24h', 'mail', 3, true],
-        ['schedule', 'Horario de atención', 'Lunes a Viernes: 9:00 - 18:00 hrs', NULL, 'clock', 4, true],
-        ['schedule', 'Horario fin de semana', 'Sábado: 10:00 - 14:00 hrs', NULL, 'clock', 5, true],
-        ['social', 'WhatsApp', '+56 9 8765 4321', NULL, 'message-circle', 6, true],
-        ['social', 'Instagram', '@gofish_chile', NULL, 'instagram', 7, true]
+        ['schedule', 'Horario de atención', 'Lunes a Viernes: 9:00 - 18:00 hrs', null, 'clock', 4, true],
+        ['schedule', 'Horario fin de semana', 'Sábado: 10:00 - 14:00 hrs', null, 'clock', 5, true],
+        ['social', 'WhatsApp', '+56 9 8765 4321', null, 'message-circle', 6, true],
+        ['social', 'Instagram', '@gofish_chile', null, 'instagram', 7, true]
       ]
 
       for (const data of contactData) {
@@ -507,10 +507,10 @@ async function setupDatabase() {
           ['address', 'Dirección', 'PC 58 Lajarilla del Puente', 'Concón, V Región', 'map-pin', 1, true],
           ['phone', 'Teléfono', '+56 9 8765 4321', 'Lun - Vie: 8:00 - 18:00', 'phone', 2, true],
           ['email', 'Email', 'contacto@gofish.cl', 'Respuesta en 24h', 'mail', 3, true],
-          ['schedule', 'Horario de atención', 'Lunes a Viernes: 9:00 - 18:00 hrs', NULL, 'clock', 4, true],
-          ['schedule', 'Horario fin de semana', 'Sábado: 10:00 - 14:00 hrs', NULL, 'clock', 5, true],
-          ['social', 'WhatsApp', '+56 9 8765 4321', NULL, 'message-circle', 6, true],
-          ['social', 'Instagram', '@gofish_chile', NULL, 'instagram', 7, true]
+          ['schedule', 'Horario de atención', 'Lunes a Viernes: 9:00 - 18:00 hrs', null, 'clock', 4, true],
+          ['schedule', 'Horario fin de semana', 'Sábado: 10:00 - 14:00 hrs', null, 'clock', 5, true],
+          ['social', 'WhatsApp', '+56 9 8765 4321', null, 'message-circle', 6, true],
+          ['social', 'Instagram', '@gofish_chile', null, 'instagram', 7, true]
         ]
 
         for (const data of contactData) {
@@ -529,10 +529,10 @@ async function setupDatabase() {
             ['address', 'Dirección', 'PC 58 Lajarilla del Puente', 'Concón, V Región', 'map-pin', 1, true],
             ['phone', 'Teléfono', '+56 9 8765 4321', 'Lun - Vie: 8:00 - 18:00', 'phone', 2, true],
             ['email', 'Email', 'contacto@gofish.cl', 'Respuesta en 24h', 'mail', 3, true],
-            ['schedule', 'Horario de atención', 'Lunes a Viernes: 9:00 - 18:00 hrs', NULL, 'clock', 4, true],
-            ['schedule', 'Horario fin de semana', 'Sábado: 10:00 - 14:00 hrs', NULL, 'clock', 5, true],
-            ['social', 'WhatsApp', '+56 9 8765 4321', NULL, 'message-circle', 6, true],
-            ['social', 'Instagram', '@gofish_chile', NULL, 'instagram', 7, true]
+            ['schedule', 'Horario de atención', 'Lunes a Viernes: 9:00 - 18:00 hrs', null, 'clock', 4, true],
+            ['schedule', 'Horario fin de semana', 'Sábado: 10:00 - 14:00 hrs', null, 'clock', 5, true],
+            ['social', 'WhatsApp', '+56 9 8765 4321', null, 'message-circle', 6, true],
+            ['social', 'Instagram', '@gofish_chile', null, 'instagram', 7, true]
           ]
 
           for (const data of contactData) {
